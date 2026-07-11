@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Offline, account-less BLE fitness logger + live dashboard. Target device: ICG IC-6.",
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
