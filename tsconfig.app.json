@@ -16,10 +16,11 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Strictness — byte-safety matters for BLE frame parsing (PLAN §2) */
+    /* Strictness — byte-safety matters for BLE frame parsing (PLAN §2). `noUncheckedIndexedAccess`
+       is the one that forces guarding DataView/array reads. `exactOptionalPropertyTypes` is left
+       OFF: it fights ordinary carry-forward merges of optional metric fields for little gain. */
     "strict": true,
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
     "noImplicitOverride": true,
 
     /* Linting */

@@ -27,11 +27,13 @@ export class IcgFramer {
   private checksum = 0
   private msgId = 0
   private readonly buf = new Uint8Array(MAX_MSG)
+  private readonly onFrame: (frame: IcgFrame) => void
+  private readonly onError: ((reason: string) => void) | undefined
 
-  constructor(
-    private readonly onFrame: (frame: IcgFrame) => void,
-    private readonly onError?: (reason: string) => void,
-  ) {}
+  constructor(onFrame: (frame: IcgFrame) => void, onError?: (reason: string) => void) {
+    this.onFrame = onFrame
+    this.onError = onError
+  }
 
   /** Feed one notification's bytes. Safe to call with partial or multiple frames. */
   push(chunk: Uint8Array): void {

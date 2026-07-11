@@ -1,6 +1,6 @@
 /**
  * ICG message decoders (PROTOCOL.md §3–§7). Big-endian. Pure functions: same code decodes a
- * live frame and re-parses a stored raw frame. Unknown/未decoded messages still round-trip via
+ * live frame and re-parses a stored raw frame. Unknown/undecoded messages still round-trip via
  * their preserved raw bytes — nothing is lost.
  */
 

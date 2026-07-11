@@ -119,6 +119,9 @@ export interface AdapterEvents {
   onSample: (s: NormalizedSample) => void
 }
 
+/** Monotonic clock returning ms since session start — keeps all timestamps on one base. */
+export type Clock = () => number
+
 /**
  * One protocol implementation. Depends only on a GATT server + these abstractions
  * (dependency inversion): the rest of the app never imports an adapter directly, only via
@@ -128,7 +131,7 @@ export interface TrainerAdapter {
   readonly protocol: SampleSource
   deviceInfo(): DeviceInfo
   /** Subscribe to notifications and begin emitting events. Runs any needed handshake. */
-  start(events: AdapterEvents): Promise<void>
+  start(events: AdapterEvents, now: Clock): Promise<void>
   stop(): Promise<void>
   /** Write a raw command to the device (e.g. a stream trigger). Optional per protocol. */
   sendCommand?(bytes: Uint8Array): Promise<void>

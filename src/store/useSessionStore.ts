@@ -73,7 +73,7 @@ function mergeSample(prev: NormalizedSample, s: NormalizedSample): NormalizedSam
   }
 }
 
-export const useSessionStore = create<SessionState>((set) => ({
+export const useSessionStore = create<SessionState>()((set) => ({
   status: 'idle',
   recording: false,
   frameCount: 0,
