@@ -75,6 +75,24 @@ export interface DeviceInfo {
   model?: string
 }
 
+/**
+ * What a device broadcasts in its advertisement — the ground truth for whether a
+ * `{ services: [...] }` picker filter would surface it. Captured best-effort via
+ * `watchAdvertisements()` (experimental in Chrome), so treat as a bonus, not guaranteed.
+ */
+export interface AdvertisementInfo {
+  name?: string
+  /** Advertised service UUIDs — does it include our ICG service? This confirms the filter. */
+  uuids: string[]
+  rssi?: number
+  txPower?: number
+  appearance?: number
+  /** Company IDs present in manufacturer data. */
+  manufacturerData?: number[]
+  /** Service UUIDs that carry service data. */
+  serviceData?: string[]
+}
+
 export interface SessionMeta {
   /** uuid */
   id: string

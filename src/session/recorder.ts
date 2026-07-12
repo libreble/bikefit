@@ -92,6 +92,12 @@ export class Recorder implements AdapterEvents {
     useSessionStore.getState().startSession(this.meta.id, this.meta.startedAtWall)
   }
 
+  /** Merge static connect-time context (advertised name/uuids, present services) and persist it. */
+  async setContext(context: Record<string, string | number>): Promise<void> {
+    this.meta.context = { ...this.meta.context, ...context }
+    await putSession(this.meta)
+  }
+
   onRaw(hex: string): void {
     const t = this.now()
     this.lastT = t

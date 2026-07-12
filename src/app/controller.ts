@@ -5,7 +5,7 @@
  * is one continuous session with a gap, not a new log.
  */
 
-import type { SessionMeta, TrainerAdapter } from '../types'
+import type { AdvertisementInfo, DecodedMessage, SampleSource, SessionMeta, TrainerAdapter } from '../types'
 import { BleConnection } from '../ble/BleConnection'
 import { detect } from '../ble/detect'
 import { acquireWakeLock, releaseWakeLock } from '../ble/wakeLock'
@@ -20,6 +20,7 @@ let connection: BleConnection | null = null
 let adapter: TrainerAdapter | null = null
 let recorder: Recorder | null = null
 let sessionId: string | null = null
+let pendingAd: AdvertisementInfo | null = null
 
 const store = () => useSessionStore.getState()
 
@@ -28,31 +29,73 @@ async function onReady(
   server: BluetoothRemoteGATTServer,
   device: BluetoothDevice,
 ): Promise<void> {
-  adapter = await detect(server, device)
-  store().setDevice(adapter.deviceInfo(), adapter.protocol)
+  const { adapter: a, services } = await detect(server, device)
+  adapter = a
+  store().setDevice(a.deviceInfo(), a.protocol)
 
   if (!recorder) {
     const meta: SessionMeta = {
       id: uuid(),
       startedAtWall: Date.now(),
-      device: adapter.deviceInfo(),
-      protocol: adapter.protocol,
+      device: a.deviceInfo(),
+      protocol: a.protocol,
     }
     recorder = new Recorder(meta)
     sessionId = meta.id
     await recorder.init()
     await acquireWakeLock()
+    await logConnectContext(a.protocol, services)
   }
 
-  await adapter.start(recorder, recorder.now)
+  await a.start(recorder, recorder.now)
+}
+
+/**
+ * Record what we learned at connect — advertised name/uuids (if captured) and the services
+ * actually present — into the session context and the debug log. This is what lets us confirm,
+ * after a real ride, whether a `{ services: [ICG_SERVICE] }` picker filter is safe to use.
+ */
+async function logConnectContext(protocol: SampleSource, services: string[]): Promise<void> {
+  const rec = recorder
+  if (!rec) return
+  const ctx: Record<string, string | number> = { presentServices: services.join(',') }
+  const messages: DecodedMessage[] = []
+
+  if (pendingAd) {
+    ctx.advertisedName = pendingAd.name ?? ''
+    ctx.advertisedUuids = pendingAd.uuids.join(',')
+    if (pendingAd.rssi !== undefined) ctx.rssi = pendingAd.rssi
+    messages.push({
+      t: 0,
+      src: protocol,
+      ok: true,
+      name: `ADV name=${pendingAd.name ?? '?'} uuids=[${pendingAd.uuids.join(' ') || 'none'}] rssi=${pendingAd.rssi ?? '?'}`,
+    })
+  } else {
+    messages.push({
+      t: 0,
+      src: protocol,
+      ok: true,
+      name: 'ADV not captured (watchAdvertisements unsupported — enable chrome://flags Experimental Web Platform features to see it)',
+    })
+  }
+  messages.push({ t: 0, src: protocol, ok: true, name: `SERVICES present=[${services.join(' ')}]` })
+
+  await rec.setContext(ctx)
+  for (const m of messages) store().pushMessage(m)
 }
 
 /** Prompt for a device and start a session. Must be called from a user gesture (button click). */
 export async function connect(): Promise<void> {
   if (connection) return
+  pendingAd = null
   const conn = new BleConnection({
     onReady,
     onStatus: (status, error) => store().setStatus(status, error),
+    onAdvertisement: (ad) => {
+      pendingAd = ad
+      console.info('[controller] advertisement', ad)
+    },
   })
   connection = conn
   try {

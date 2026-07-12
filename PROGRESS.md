@@ -2,6 +2,24 @@
 
 Running status so anyone (incl. future me) can pick this up. Newest first.
 
+## 2026-07-12 — deployed, validated, wider picker
+
+- **Live on GitHub Pages:** https://libreble.github.io/bikefit/ (Actions workflow; relative
+  `base` works at the `/bikefit/` subpath). Every push to `main` auto-redeploys. All Actions
+  pinned to latest majors (Node 24 — no deprecation warnings).
+- **Decoder validated against the real app (oracle test).** A faithful reimplementation of the
+  ICG app's own decoder was diffed against ours over 4000 random frames each (framer, live,
+  aggregated, encoder round-trip) plus 1000 corruption/fragmentation cases → **100% match**.
+  Our frame decode is byte-for-byte the reference. Harness kept in scratchpad (`oracle.mts`),
+  not committed (tests deferred); re-runnable with `pnpm dlx tsx`.
+- **Wide-net device picker:** `requestDevice` now uses `acceptAllDevices` instead of service
+  filters, so an inaccurate filter can never hide the bike. Tighten to
+  `{ services: [ICG_SERVICE] }` (what the real app uses) once confirmed at the bike.
+- **Connect-time recon captured:** session context now records the advertised name + service
+  UUIDs (best-effort via `watchAdvertisements` — experimental in Chrome) and the services
+  actually present after connect. Both show in the Debug/Log panel and the exported JSON, so a
+  single real ride tells us whether a service filter is safe to use.
+
 ## 2026-07-11 (overnight build, offline)
 
 **Goal for this session:** first working version — a live workout dashboard (tiles + graphs)

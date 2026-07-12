@@ -9,18 +9,22 @@ import type { TrainerAdapter } from '../types'
 import { ICG_SERVICE } from './constants'
 import { IcgUartAdapter } from './adapters/IcgUartAdapter'
 
+export interface DetectResult {
+  adapter: TrainerAdapter
+  /** The device's primary service UUIDs actually present (diagnostic; helps confirm/tighten the filter). */
+  services: string[]
+}
+
 export async function detect(
   server: BluetoothRemoteGATTServer,
   device: BluetoothDevice,
-): Promise<TrainerAdapter> {
+): Promise<DetectResult> {
   const services = await server.getPrimaryServices()
-  const uuids = new Set(services.map((s) => s.uuid))
-  const has = (uuid: string | number): boolean => uuids.has(BluetoothUUID.getService(uuid))
+  const uuids = services.map((s) => s.uuid)
+  const has = (uuid: string | number): boolean => uuids.includes(BluetoothUUID.getService(uuid))
 
   // Priority: ICG-UART > (future) FTMS > (future) CPS.
-  if (has(ICG_SERVICE)) return new IcgUartAdapter(server, device)
+  if (has(ICG_SERVICE)) return { adapter: new IcgUartAdapter(server, device), services: uuids }
 
-  throw new Error(
-    'No supported trainer service found. Detected: ' + [...uuids].join(', ') + '.',
-  )
+  throw new Error('No supported trainer service found. Present: ' + uuids.join(', ') + '.')
 }

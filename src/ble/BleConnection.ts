@@ -6,12 +6,15 @@
  * runs again to re-subscribe.
  */
 
+import type { AdvertisementInfo } from '../types'
 import type { ConnStatus } from '../store/useSessionStore'
 import { REQUEST_DEVICE_OPTIONS } from './constants'
 
 interface BleConnectionOpts {
   onReady: (server: BluetoothRemoteGATTServer, device: BluetoothDevice) => Promise<void>
   onStatus: (status: ConnStatus, error?: string) => void
+  /** Best-effort: fires once with the first advertisement seen (if the browser supports it). */
+  onAdvertisement?: (info: AdvertisementInfo) => void
 }
 
 const BACKOFF_MIN = 250
@@ -33,8 +36,49 @@ export class BleConnection {
     const device = await navigator.bluetooth.requestDevice(REQUEST_DEVICE_OPTIONS)
     this.device = device
     device.addEventListener('gattserverdisconnected', this.handleDisconnect)
+    this.captureAdvertisement(device)
     this.shouldReconnect = true
     await this.open()
+  }
+
+  /**
+   * Best-effort snapshot of the first advertisement — the only way to see what the device
+   * actually broadcasts (name + service UUIDs), which is what a picker filter matches against.
+   * `watchAdvertisements` is experimental in Chrome; if it's unavailable this is a silent no-op
+   * and we fall back to the device name + the post-connect service list.
+   */
+  private captureAdvertisement(device: BluetoothDevice): void {
+    const onAd = this.opts.onAdvertisement
+    if (!onAd || typeof device.watchAdvertisements !== 'function') return
+
+    const ac = new AbortController()
+    let done = false
+    const handler = (event: BluetoothAdvertisingEvent): void => {
+      if (done) return
+      done = true
+      device.removeEventListener('advertisementreceived', handler)
+      ac.abort()
+      onAd({
+        name: event.name,
+        uuids: event.uuids.map((u) => String(u)),
+        rssi: event.rssi,
+        txPower: event.txPower,
+        appearance: event.appearance,
+        manufacturerData: [...event.manufacturerData.keys()],
+        serviceData: [...event.serviceData.keys()].map((u) => String(u)),
+      })
+    }
+    device.addEventListener('advertisementreceived', handler)
+    device.watchAdvertisements({ signal: ac.signal }).catch((e) => {
+      console.warn('[ble] watchAdvertisements unsupported/failed', e)
+    })
+    // Stop listening after a few seconds regardless (the device stops advertising once connected).
+    window.setTimeout(() => {
+      if (done) return
+      done = true
+      device.removeEventListener('advertisementreceived', handler)
+      ac.abort()
+    }, 6000)
   }
 
   private async open(): Promise<void> {
