@@ -27,22 +27,27 @@ export const TX_POWER_SERVICE = 0x1804
 export const GAP_SERVICE = 0x1800
 
 /**
- * `requestDevice` options. Filters (OR) surface ICG + FTMS + CPS bikes and Domyos-style names;
- * optionalServices lists everything any adapter may later read (Web Bluetooth blocks access to
- * services not declared here). Mirrors the ICG app's own Web Bluetooth call (PROTOCOL.md §1).
+ * `requestDevice` options — deliberately a WIDE net.
+ *
+ * We use `acceptAllDevices` (show every nearby BLE device in the chooser) instead of `filters`.
+ * Why: Web Bluetooth `filters` match only what a device puts in its *advertisement* packet, which
+ * is size-limited — 128-bit UUIDs (like our Nordic-UART service) are often dropped from it. We
+ * have not yet confirmed the IC-6 advertises that UUID, nor what name it broadcasts, so any filter
+ * risks hiding the bike entirely ("walled"). A wide net can never do that; the price is a busier
+ * chooser (you pick the bike by name). We tighten to a filter once we've seen, at the bike, what
+ * it actually advertises.
+ *
+ * `optionalServices` is what matters post-connect: Web Bluetooth blocks access to any service not
+ * declared here, and this grant is independent of what was advertised. It lists everything any
+ * adapter reads; `detect.ts` then chooses the adapter from the services actually present.
+ *
+ * For reference, the official ICG app filters on ONLY `ICG_SERVICE` and lists these same services
+ * in optionalServices (PROTOCOL.md §1) — so it relies on the bike advertising the UART UUID.
  */
 export const REQUEST_DEVICE_OPTIONS: RequestDeviceOptions = {
-  filters: [
-    { services: [ICG_SERVICE] },
-    { services: [FTMS_SERVICE] },
-    { services: [CPS_SERVICE] },
-    { namePrefix: 'CBC-' },
-    { namePrefix: 'Domyos' },
-  ],
+  acceptAllDevices: true,
   optionalServices: [
     ICG_SERVICE,
-    ICG_RX_CHAR,
-    ICG_TX_CHAR,
     FTMS_SERVICE,
     CPS_SERVICE,
     CSC_SERVICE,
