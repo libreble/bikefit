@@ -2,6 +2,37 @@
 
 Running status so anyone (incl. future me) can pick this up. Newest first.
 
+## 2026-07-12 (at the bike) — FIRST CONNECT SUCCESS ✅
+
+First real ride: **connected on the first try, most live values visible in the app.** The
+oracle-proven decoder works against real IC-6 hardware. Field notes:
+- **Device name in the picker: `BIKE <number>`** (e.g. "BIKE 42"). The wide net paid off; later
+  we can tighten with `namePrefix: 'BIKE'` and/or `{ services: [ICG_SERVICE] }`.
+- **Streaming auto-starts on connect** — values appeared with no trigger command. Resolves the big
+  open question: no RX handshake needed to begin the live stream.
+- "Most" values, not all — some tiles may be blank/wrong; the log dump will pin down which.
+
+### → NEXT AGENT: analyze the exported session log
+
+The user will paste an exported **SessionFile JSON** (app → "Export session (JSON)"). It's
+self-contained (schema in `src/types.ts`):
+- `session.context` → `advertisedName`, `advertisedUuids`, `presentServices`, `rssi` (filter recon)
+- `session.device` → name/id; `summary` → avg/max power/cadence/hr, distance, energy
+- `frames[]` → every raw notification as hex `{seq,t,src,hex}` — lossless, re-parseable
+- `messages[]` → decoded `{t,msgId,name,fields,leftover,ok}`
+
+Checklist:
+1. **Anomalies** — any message with non-empty `leftover` or `ok:false`? A LIVE frame (msg 12) with
+   leftover means the 29-byte model is off for this firmware. Tally which msgId names appeared.
+2. **Confirm the filter** — does `advertisedUuids` include `6e400001…`? Is `advertisedName` "BIKE ##"?
+   Are standard CPS `0x1818` / CSC `0x1816` / FTMS `0x1826` in `presentServices` (a simpler path)?
+3. **Confirm units** — sanity-check `fields` vs what the console displayed: `brakeLevel` range,
+   `workoutTime`/`currentLapTime` (seconds?), `ftpPercent` scaling, speed/distance (÷10). Raw hex
+   lets you re-parse — decoders are pure fns in `src/decode/` (framer + messages).
+4. **Blank/wrong tile** — map it to the field/offset, fix the decoder, re-parse the stored frames.
+5. Reference: `PROTOCOL.md` (spec), `src/decode/` (impl). Our decode is **oracle-verified
+   byte-exact** vs the ICG app, so discrepancies are likelier firmware/unit differences than bugs.
+
 ## 2026-07-12 — deployed, validated, wider picker
 
 - **Live on GitHub Pages:** https://libreble.github.io/bikefit/ (Actions workflow; relative
