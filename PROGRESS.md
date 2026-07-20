@@ -2,6 +2,24 @@
 
 Running status so anyone (incl. future me) can pick this up. Newest first.
 
+## 2026-07-21 — Narrowed the device picker (mirror the ICG app; back off the wide net)
+
+Re-checked the RE'd ICG app (`~/icg-re/beaut/main.*.js`) to see how it discovers devices — two
+distinct paths:
+- **Native (phone, the gym-proven one):** `bluetoothle.startScan({allowDuplicates:false})` with **no
+  service filter**, then keeps results **by name** — `isOneOfKnownDevices(name)` = name contains
+  `"BIKE"` / `"CBC-RWR"` / `"IC5 UPDATE"` / `"LF-ROW"` / `"ICG-IC5V2"` / … So its real strategy is
+  **name-based**, not service-UUID — presumably because the 128-bit UART UUID isn't reliably in the
+  advertisement.
+- **Browser fallback:** `requestDevice({ filters: [{ services: [RX_SERVICE_UUID] }], … })` — service
+  filter (maybe never hardware-tested).
+
+So we narrowed `REQUEST_DEVICE_OPTIONS` (`src/ble/constants.ts`) from `acceptAllDevices` to
+`filters: [{ namePrefix: 'BIKE' }, { services: [ICG_SERVICE] }]` (OR): name is the primary/proven
+route (field-confirmed "BIKE ##"), the service UUID a backstop. `optionalServices` unchanged.
+**Needs a real-bike confirm** (can't test the chooser without hardware) — but high confidence: it
+mirrors both app paths and our field data. typecheck / lint / build green.
+
 ## 2026-07-21 — Routing: session history promoted to real, bookmarkable pages
 
 Added `react-router-dom` (HashRouter) and split the one screen into routes:

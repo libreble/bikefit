@@ -27,25 +27,29 @@ export const TX_POWER_SERVICE = 0x1804
 export const GAP_SERVICE = 0x1800
 
 /**
- * `requestDevice` options — deliberately a WIDE net.
+ * `requestDevice` options — a narrow net, mirroring how the official ICG app finds devices.
  *
- * We use `acceptAllDevices` (show every nearby BLE device in the chooser) instead of `filters`.
- * Why: Web Bluetooth `filters` match only what a device puts in its *advertisement* packet, which
- * is size-limited — 128-bit UUIDs (like our Nordic-UART service) are often dropped from it. We
- * have not yet confirmed the IC-6 advertises that UUID, nor what name it broadcasts, so any filter
- * risks hiding the bike entirely ("walled"). A wide net can never do that; the price is a busier
- * chooser (you pick the bike by name). We tighten to a filter once we've seen, at the bike, what
- * it actually advertises.
+ * We match on EITHER of two OR'd filters (a device shows if it satisfies either):
+ *   1. `namePrefix: 'BIKE'` — the IC-6 broadcasts as "BIKE <number>" (field-confirmed, e.g.
+ *      "BIKE 42"). This is the app's *production* strategy: its native scanner scans wide and then
+ *      keeps devices whose name matches a known set (`isOneOfKnownDevices` → `indexOf("BIKE")`,
+ *      "CBC-RWR", "IC5 UPDATE", …). It filters by NAME, not by service UUID — presumably because
+ *      the 128-bit UART UUID isn't reliably in the advertisement. This is the route we trust.
+ *   2. `services: [ICG_SERVICE]` — the app's *browser* fallback filters on exactly this UUID
+ *      (`connectBrowserAPI`). A useful backstop if a unit's name differs but it does advertise the
+ *      service. Harmless if the UUID isn't advertised (this clause simply won't match).
+ *
+ * We opened this to `acceptAllDevices` for the first gym session so an inaccurate filter couldn't
+ * hide the bike; the ride confirmed the "BIKE ##" name and that `ICG_SERVICE` is present after
+ * connect, so we can safely narrow. (We never captured `advertisedUuids` — watchAdvertisements is
+ * unsupported in the gym browser — hence keeping the name filter as the primary, proven route.)
  *
  * `optionalServices` is what matters post-connect: Web Bluetooth blocks access to any service not
- * declared here, and this grant is independent of what was advertised. It lists everything any
- * adapter reads; `detect.ts` then chooses the adapter from the services actually present.
- *
- * For reference, the official ICG app filters on ONLY `ICG_SERVICE` and lists these same services
- * in optionalServices (PROTOCOL.md §1) — so it relies on the bike advertising the UART UUID.
+ * declared here (and this grant is independent of what was advertised or filtered on). It lists
+ * everything any adapter might read; `detect.ts` picks the adapter from the services actually present.
  */
 export const REQUEST_DEVICE_OPTIONS: RequestDeviceOptions = {
-  acceptAllDevices: true,
+  filters: [{ namePrefix: 'BIKE' }, { services: [ICG_SERVICE] }],
   optionalServices: [
     ICG_SERVICE,
     FTMS_SERVICE,
