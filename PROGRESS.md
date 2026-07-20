@@ -2,6 +2,27 @@
 
 Running status so anyone (incl. future me) can pick this up. Newest first.
 
+## 2026-07-21 — Routing: session history promoted to real, bookmarkable pages
+
+Added `react-router-dom` (HashRouter) and split the one screen into routes:
+- `/` **live dashboard** — tiles + graphs, a Current-session export panel, and a "Recent rides"
+  preview linking to history.
+- `/sessions` **history** — a prominent full-width list (Add demo / Import JSON / Refresh); rows link
+  to the detail page and carry JSON/TCX/Delete.
+- `/sessions/:id` **session detail** — a bookmarkable page: back link, export/delete, the full stat
+  grid + big sparklines (was the cramped review modal).
+
+Header gained a Live/History nav. The old `SessionControls`/`SessionReview` were removed; their
+pieces became `pages/*`, `SessionList`, `SessionSummaryView`, `CurrentSessionExport`, `useSessions`.
+HashRouter chosen because we deploy to a GH Pages subpath with a relative base and no SPA fallback —
+deep links/refresh work with zero deploy changes. Rationale + reversal: DECISIONS.md (2026-07-21).
+
+**Browser-verified:** Live/History/detail all render; the URL hash tracks the route; a hard reload of
+a `/#/sessions/:id` URL loads that session directly (bookmarkable); an unknown id shows a graceful
+not-found; and a running demo session kept accumulating across a History↔Live round-trip (module
+singletons, so navigation doesn't disrupt a live ride). typecheck / lint / build green (bundle
++~43 kB gz for the router).
+
 ## 2026-07-21 — Backlog cleared: dashboard, history, seed, TCX/JSON (TODO #3–#6)
 
 Worked the whole near-term backlog in one pass (four commits):

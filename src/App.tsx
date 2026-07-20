@@ -1,19 +1,23 @@
 /**
- * Screen composition: header (title + profile button + connection bar), the live tiles as the main
- * focus, trends below, and the session controls alongside. Mobile-first single column that widens
- * to a two-column grid on larger screens (see index.css). The rider profile is a modal popup
- * (ProfileDialog), off the main page — better on a phone.
+ * App shell: a header (title + actions, a Live/History nav, and the global connection bar) over a
+ * routed content area. Routes: / live dashboard, /sessions history, /sessions/:id a bookmarkable
+ * session. The rider profile and dashboard-customize dialogs are global modals. The BLE session and
+ * store live in module singletons, so navigating between routes never interrupts a live ride.
  */
 import './index.css'
 import { useState } from 'react'
+import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { ConnectionBar } from './ui/ConnectionBar'
-import { LiveTiles } from './ui/LiveTiles'
-import { Graphs } from './ui/Graphs'
 import { ProfileDialog } from './ui/ProfileDialog'
 import { DashboardDialog } from './ui/DashboardDialog'
-import { SessionControls } from './ui/SessionControls'
+import { LivePage } from './pages/LivePage'
+import { HistoryPage } from './pages/HistoryPage'
+import { SessionPage } from './pages/SessionPage'
 import { loadProfile, profileLabel, type UserProfile } from './profile/profile'
 import { loadDashboard, type DashboardPrefs } from './prefs/dashboard'
+
+const navClass = ({ isActive }: { isActive: boolean }): string =>
+  `nav-link${isActive ? ' nav-link--active' : ''}`
 
 export function App() {
   const [profileOpen, setProfileOpen] = useState(false)
@@ -39,20 +43,26 @@ export function App() {
             </button>
           </div>
         </div>
+
+        <nav className="app-nav" aria-label="Sections">
+          <NavLink to="/" end className={navClass}>
+            Live
+          </NavLink>
+          <NavLink to="/sessions" className={navClass}>
+            History
+          </NavLink>
+        </nav>
+
         <ConnectionBar />
       </header>
 
-      <main className="app-main">
-        <div className="col-main">
-          <LiveTiles prefs={dash} />
-          <Graphs />
-        </div>
-
-        <div className="col-side">
-          <div className="panel">
-            <SessionControls />
-          </div>
-        </div>
+      <main className="app-content">
+        <Routes>
+          <Route path="/" element={<LivePage prefs={dash} />} />
+          <Route path="/sessions" element={<HistoryPage />} />
+          <Route path="/sessions/:id" element={<SessionPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </main>
 
       <ProfileDialog

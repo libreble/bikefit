@@ -36,6 +36,10 @@ into Strava / intervals.icu / TrainingPeaks / Golden Cheetah. Plus JSON import
 (`src/session/importer.ts`, v2). **FIT export not done** — TCX covers the same apps; FIT is a later
 "do it properly" option if a target needs it.
 
+### ~~7. Routing: session history as bookmarkable pages~~ — **DONE 2026-07-21**
+`react-router-dom` (HashRouter) → `/` live, `/sessions` history, `/sessions/:id` bookmarkable detail;
+Live/History nav in the header. See DECISIONS.md (2026-07-21).
+
 ---
 
 ## Next up

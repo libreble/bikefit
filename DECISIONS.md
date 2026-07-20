@@ -4,6 +4,33 @@ Newest first. Each entry: **what**, **why**, and **how to reverse** if we change
 
 ---
 
+## 2026-07-21 — Client routing via HashRouter; session history is a real destination
+
+**What.** Added `react-router-dom` and split the single screen into routes: `/` (live dashboard),
+`/sessions` (history list), `/sessions/:id` (a bookmarkable session page). The header gained a
+Live/History nav; the old past-sessions side panel + review modal became the History page + the
+session detail page. App is now a shell (header + `<Routes>`) with the pages under `src/pages/`.
+Uses **HashRouter**, so URLs look like `…/bikefit/#/sessions/:id`.
+
+**Why HashRouter (not BrowserRouter/clean URLs).** The app ships to a **GitHub Pages subpath** with
+a deliberately **relative Vite base** (`base: './'`, so `dist/` runs from any path — see the
+2026-07-11 stack decision) and **no SPA 404 fallback**. Hash routes are client-only: a deep link
+like `/bikefit/#/sessions/abc` loads `index.html` at `/bikefit/` and the router reads the hash, so
+**bookmarks and refresh just work** with zero server/deploy config. Verified in-browser: hard-reload
+of a session URL renders that session; an unknown id shows a graceful not-found. The BLE session +
+Zustand store are module singletons, so navigating between routes never interrupts a live ride
+(also verified: HR/speed/elapsed kept climbing across a History↔Live round-trip).
+
+**Trade-off.** Clean URLs (`/bikefit/sessions/abc`) would need `base: '/bikefit/'` + a `404.html`
+redirect trick, giving up the "runs from any path" property and adding a redirect flash. Not worth
+it for a personal PWA; the `#` is cosmetic.
+
+**How to reverse.** Swap `HashRouter`→`BrowserRouter basename={import.meta.env.BASE_URL}` in
+`main.tsx`, set Vite `base: '/bikefit/'`, and add a `public/404.html` SPA-redirect. Routes/pages
+stay as-is. To drop routing entirely, re-inline the pages into `App.tsx` and remove the dep.
+
+---
+
 ## 2026-07-21 — Storage pivot: store the decoded time series, drop raw-frame capture
 
 **What.** Retired the lossless raw-frame black box. IndexedDB (v2) now holds **`sessions`** (meta +
