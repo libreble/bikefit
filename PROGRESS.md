@@ -2,6 +2,27 @@
 
 Running status so anyone (incl. future me) can pick this up. Newest first.
 
+## 2026-07-21 — Backlog cleared: dashboard, history, seed, TCX/JSON (TODO #3–#6)
+
+Worked the whole near-term backlog in one pass (four commits):
+- **Customizable dashboard + hero avg/trend** (#3/#4). `LiveTiles` renders from localStorage prefs
+  (`src/prefs/dashboard.ts`); a "Customize" dialog reorders metrics (first shown = hero) and
+  shows/hides them. Hero tile shows the metric's session average + a ▲/▼/▪ trend arrow; the store
+  now tracks running averages for power/cadence/hr/speed (`store.avg`).
+- **Session history + seed** (#5). Past-session rows are clickable → a review modal (summary stats,
+  the bike's IF/TSS, sparklines from the stored samples). "Add demo session" seeds a finished 45-min
+  ride into IndexedDB (`src/demo/seed.ts`) via `DemoRide` + a bulk `addSamples()`.
+- **TCX export + JSON import** (#6). `src/session/tcx.ts` renders a Garmin TCX (power/HR/cadence/
+  speed; power+speed via the ns3 ActivityExtension) — imports into Strava / intervals.icu /
+  TrainingPeaks / Golden Cheetah. Chose file export over the Strava API to stay offline. JSON import
+  (`src/session/importer.ts`, v2 only) round-trips our own export.
+
+**Browser-verified end to end:** hero avg + trend arrow (flat→▲ as power crossed the mean);
+Customize reorder → Save made HR the hero and persisted; seeding wrote a 2700-sample session with a
+full summary + aggregated (review modal showed 45:00 / 154 W avg / 27.97 km / IF 0.80 / TSS 50 with
+clear interval sparklines); TCX built 2700 trackpoints each with `<ns3:Watts>`; JSON import grew the
+session count and rejected v1/non-JSON with clear errors. typecheck / lint / build green.
+
 ## 2026-07-21 — Storage pivot: decoded time series, raw logger removed
 
 Retired the lossless raw-frame black box now that the decoder is proven. **IndexedDB v2**:
