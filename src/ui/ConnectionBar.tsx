@@ -61,6 +61,18 @@ export function ConnectionBar() {
         {buttonLabel}
       </button>
 
+      {!connected && !busy && (
+        <button
+          type="button"
+          className="btn btn-ghost demo-btn"
+          onClick={() => void run(controller.connectDemo)}
+          disabled={pending}
+          title="Simulate a ride without a bike (for testing the UI)"
+        >
+          Demo
+        </button>
+      )}
+
       <div className="conn-state">
         <span className={`status-dot status-${status}`} aria-hidden="true" />
         <span className="status-label">{STATUS_LABEL[status]}</span>

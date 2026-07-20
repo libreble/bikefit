@@ -8,6 +8,7 @@
 import type { AdvertisementInfo, DecodedMessage, SampleSource, SessionMeta, TrainerAdapter } from '../types'
 import { BleConnection } from '../ble/BleConnection'
 import { detect } from '../ble/detect'
+import { DemoAdapter } from '../demo/DemoAdapter'
 import { acquireWakeLock, releaseWakeLock } from '../ble/wakeLock'
 import { Recorder } from '../session/recorder'
 import { exportSession } from '../session/exporter'
@@ -22,6 +23,8 @@ let adapter: TrainerAdapter | null = null
 let recorder: Recorder | null = null
 let sessionId: string | null = null
 let pendingAd: AdvertisementInfo | null = null
+/** True while a synthetic demo session is running (no BleConnection to drive status events). */
+let demo = false
 
 const store = () => useSessionStore.getState()
 
@@ -111,6 +114,40 @@ export async function connect(): Promise<void> {
   }
 }
 
+/**
+ * Start a synthetic session with no hardware — a fake bike streaming a realistic ride. Runs the
+ * same detect-less path onto the real recorder + store, so every UI surface and the export behave
+ * exactly as with a bike. Reuses {@link disconnect} to tear down. For UI work off the bike.
+ */
+export async function connectDemo(): Promise<void> {
+  if (connection || adapter) return
+  demo = true
+  pendingAd = null
+  store().setStatus('connecting')
+  try {
+    const a = new DemoAdapter()
+    adapter = a
+    store().setDevice(a.deviceInfo(), a.protocol)
+    const meta: SessionMeta = {
+      id: uuid(),
+      startedAtWall: Date.now(),
+      device: a.deviceInfo(),
+      protocol: a.protocol,
+    }
+    recorder = new Recorder(meta)
+    sessionId = meta.id
+    await recorder.init()
+    await recorder.setContext({ demo: 1 })
+    await a.start(recorder, recorder.now)
+    store().setStatus('connected')
+  } catch (e) {
+    demo = false
+    adapter = null
+    recorder = null
+    store().setStatus('error', e instanceof Error ? e.message : String(e))
+  }
+}
+
 /** Intentional teardown: stop notifications, finalize the log, release the lock. */
 export async function disconnect(): Promise<void> {
   try {
@@ -128,6 +165,11 @@ export async function disconnect(): Promise<void> {
   connection = null
   adapter = null
   recorder = null
+  // A demo has no BleConnection to fire a disconnect event, so settle the status here.
+  if (demo) {
+    demo = false
+    store().setStatus('idle')
+  }
   // sessionId kept so the just-finished ride can still be exported.
 }
 

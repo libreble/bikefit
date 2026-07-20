@@ -2,6 +2,20 @@
 
 Running status so anyone (incl. future me) can pick this up. Newest first.
 
+## 2026-07-20 — Demo mode (fake bike, no hardware)
+
+Added a **Demo** button next to Connect that streams a synthetic IC-6 ride so the UI can be worked
+on off the bike. Design: a `DemoAdapter` (`src/demo/`) that, on a 1 Hz timer, drives a
+`DemoRide` (warmup ramp → 4-min-hard / 2-min-easy interval blocks, per-second jitter) and emits a
+**paired LIVE + AGGREGATED frame** each tick as *real ICG bytes*. The frames run through the exact
+same `decodeIcgMessage` → recorder → store path as hardware, so tiles, graphs, debug log, summary
+and **export** all exercise the production pipeline unchanged; a demo session even re-parses/exports
+like a real ride. FTP-relative numbers read the saved profile (else FTP 200 / 75 kg / 185 bpm).
+- `synthFrames.ts` = byte-exact inverse of the stream decoders; verified round-trip (encode→decode
+  identical on every field) via a tsx harness, then browser-verified (tiles live, graphs drawing,
+  frames/messages all `ok`, clean Idle teardown on Disconnect).
+- typecheck / lint / build green. Storage model unchanged (still logs every frame losslessly).
+
 ## 2026-07-12 — FTP / user-data handshake implemented (opt-in profile)
 
 Reversed `setAllUserData` + the RX dispatch from the app bundle → **PROTOCOL.md §8a** (fixed 10-byte
