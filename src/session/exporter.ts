@@ -6,6 +6,7 @@
 
 import type { SessionFile, SessionSummary } from '../types'
 import { getSamples, getSession } from './db'
+import { buildTcx } from './tcx'
 
 function isoStamp(ms: number): string {
   // Filesystem-safe ISO: 2026-07-11T21-30-05
@@ -30,8 +31,8 @@ export async function buildSessionFile(sessionId: string): Promise<SessionFile> 
   return file
 }
 
-function download(filename: string, text: string): void {
-  const blob = new Blob([text], { type: 'application/json' })
+function download(filename: string, text: string, mime = 'application/json'): void {
+  const blob = new Blob([text], { type: mime })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -43,9 +44,21 @@ function download(filename: string, text: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
+function baseName(startedAtWall: number, sessionId: string): string {
+  return `bikefit-${isoStamp(startedAtWall)}-${sessionId.slice(0, 8)}`
+}
+
 export async function exportSession(sessionId: string): Promise<void> {
   const file = await buildSessionFile(sessionId)
-  const shortId = sessionId.slice(0, 8)
-  const name = `bikefit-${isoStamp(file.session.startedAtWall)}-${shortId}.json`
-  download(name, JSON.stringify(file, null, 2))
+  download(`${baseName(file.session.startedAtWall, sessionId)}.json`, JSON.stringify(file, null, 2))
+}
+
+/** Export as Garmin TCX (Strava / intervals.icu / TrainingPeaks / Golden Cheetah). */
+export async function exportSessionTcx(sessionId: string): Promise<void> {
+  const file = await buildSessionFile(sessionId)
+  download(
+    `${baseName(file.session.startedAtWall, sessionId)}.tcx`,
+    buildTcx(file),
+    'application/vnd.garmin.tcx+xml',
+  )
 }

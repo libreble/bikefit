@@ -11,7 +11,8 @@ import { detect } from '../ble/detect'
 import { DemoAdapter } from '../demo/DemoAdapter'
 import { acquireWakeLock, releaseWakeLock } from '../ble/wakeLock'
 import { Recorder } from '../session/recorder'
-import { exportSession } from '../session/exporter'
+import { exportSession, exportSessionTcx } from '../session/exporter'
+import { importSessionFile } from '../session/importer'
 import {
   deleteSession,
   getSamples,
@@ -165,6 +166,20 @@ export async function disconnect(): Promise<void> {
 export async function exportCurrentSession(): Promise<void> {
   if (!sessionId) throw new Error('no session to export')
   await exportSession(sessionId)
+}
+
+export async function exportCurrentSessionTcx(): Promise<void> {
+  if (!sessionId) throw new Error('no session to export')
+  await exportSessionTcx(sessionId)
+}
+
+export async function exportPastSessionTcx(id: string): Promise<void> {
+  await exportSessionTcx(id)
+}
+
+/** Import a SessionFile JSON (as text) into IndexedDB; returns the imported session id. */
+export async function importSession(text: string): Promise<string> {
+  return importSessionFile(text)
 }
 
 export async function listPastSessions(): Promise<StoredSession[]> {

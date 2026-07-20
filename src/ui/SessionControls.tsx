@@ -3,7 +3,7 @@
  * Refresh), open one for review, export, or delete. All persistence lives behind the controller;
  * this component only holds the fetched list + UI state.
  */
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ChangeEvent } from 'react'
 import * as controller from '../app/controller'
 import type { StoredSession } from '../session/db'
 import { formatDuration } from '../util/time'
@@ -64,6 +64,32 @@ export function SessionControls() {
     }
   }
 
+  const onExportCurrentTcx = async () => {
+    setExportingCurrent(true)
+    setError(undefined)
+    try {
+      await controller.exportCurrentSessionTcx()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setExportingCurrent(false)
+    }
+  }
+
+  const onImport = async (e: ChangeEvent<HTMLInputElement>) => {
+    const input = e.target
+    const file = input.files?.[0]
+    input.value = '' // allow re-importing the same file
+    if (!file) return
+    setError(undefined)
+    try {
+      await controller.importSession(await file.text())
+      await refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    }
+  }
+
   const onSeed = async () => {
     setSeeding(true)
     setError(undefined)
@@ -90,6 +116,7 @@ export function SessionControls() {
   }
 
   const onExport = (id: string) => void withBusy(id, () => controller.exportPastSession(id))
+  const onExportTcx = (id: string) => void withBusy(id, () => controller.exportPastSessionTcx(id))
   const onDelete = (id: string) =>
     void withBusy(id, async () => {
       await controller.deletePastSession(id)
@@ -105,8 +132,25 @@ export function SessionControls() {
           onClick={() => void onExportCurrent()}
           disabled={exportingCurrent}
         >
-          Export session (JSON)
+          Export JSON
         </button>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => void onExportCurrentTcx()}
+          disabled={exportingCurrent}
+        >
+          Export TCX
+        </button>
+        <label className="btn btn-ghost import-btn">
+          Import JSON
+          <input
+            type="file"
+            accept=".json,application/json"
+            onChange={(e) => void onImport(e)}
+            hidden
+          />
+        </label>
       </div>
 
       <div className="sessions-past">
@@ -167,7 +211,15 @@ export function SessionControls() {
                       onClick={() => onExport(s.id)}
                       disabled={busyId === s.id}
                     >
-                      Export
+                      JSON
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => onExportTcx(s.id)}
+                      disabled={busyId === s.id}
+                    >
+                      TCX
                     </button>
                     <button
                       type="button"

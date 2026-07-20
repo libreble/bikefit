@@ -639,8 +639,21 @@ h3 {
   gap: 14px;
 }
 
+.sessions-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .sessions-head .btn {
-  width: 100%;
+  flex: 1 1 auto;
+  text-align: center;
+}
+
+.import-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sessions-past-head {
