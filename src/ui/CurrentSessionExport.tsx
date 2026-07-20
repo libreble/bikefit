@@ -2,8 +2,10 @@
  * sessions are exported from their own detail page. */
 import { useState } from 'react'
 import * as controller from '../app/controller'
+import { useT } from '../i18n/i18n'
 
 export function CurrentSessionExport() {
+  const t = useT()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | undefined>(undefined)
 
@@ -21,7 +23,7 @@ export function CurrentSessionExport() {
 
   return (
     <div className="panel">
-      <h3 className="panel-h">Current session</h3>
+      <h3 className="panel-h">{t('export.currentTitle')}</h3>
       <div className="btn-row">
         <button
           type="button"
@@ -29,7 +31,7 @@ export function CurrentSessionExport() {
           onClick={() => void run(controller.exportCurrentSession)}
           disabled={busy}
         >
-          Export JSON
+          {t('export.json')}
         </button>
         <button
           type="button"
@@ -37,7 +39,7 @@ export function CurrentSessionExport() {
           onClick={() => void run(controller.exportCurrentSessionTcx)}
           disabled={busy}
         >
-          Export TCX
+          {t('export.tcx')}
         </button>
       </div>
       {error !== undefined && (

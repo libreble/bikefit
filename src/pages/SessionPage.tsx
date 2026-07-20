@@ -8,8 +8,10 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import * as controller from '../app/controller'
 import type { SessionDetail } from '../app/controller'
 import { SessionSummaryView } from '../ui/SessionSummaryView'
+import { useT } from '../i18n/i18n'
 
 export function SessionPage() {
+  const t = useT()
   const { id } = useParams<'id'>()
   const navigate = useNavigate()
   const [detail, setDetail] = useState<SessionDetail | null>(null)
@@ -54,14 +56,14 @@ export function SessionPage() {
     })
 
   const title =
-    detail !== null ? new Date(detail.session.startedAtWall).toLocaleString() : 'Session'
+    detail !== null ? new Date(detail.session.startedAtWall).toLocaleString() : t('session.title')
 
   return (
     <div className="page">
       <div className="page-head">
         <div className="page-head-main">
           <Link className="back-link" to="/sessions">
-            ← History
+            {t('session.back')}
           </Link>
           <h2 className="page-title">{title}</h2>
         </div>
@@ -73,7 +75,7 @@ export function SessionPage() {
               onClick={() => void run(() => controller.exportPastSession(id))}
               disabled={busy}
             >
-              Export JSON
+              {t('export.json')}
             </button>
             <button
               type="button"
@@ -81,10 +83,10 @@ export function SessionPage() {
               onClick={() => void run(() => controller.exportPastSessionTcx(id))}
               disabled={busy}
             >
-              Export TCX
+              {t('export.tcx')}
             </button>
             <button type="button" className="btn btn-danger" onClick={onDelete} disabled={busy}>
-              Delete
+              {t('common.delete')}
             </button>
           </div>
         )}
@@ -95,10 +97,10 @@ export function SessionPage() {
           {error}
         </div>
       )}
-      {detail === null && error === undefined && <div className="sessions-empty">Loading…</div>}
-      {detail !== null && (
-        <SessionSummaryView session={detail.session} samples={detail.samples} />
+      {detail === null && error === undefined && (
+        <div className="sessions-empty">{t('common.loading')}</div>
       )}
+      {detail !== null && <SessionSummaryView session={detail.session} samples={detail.samples} />}
     </div>
   )
 }

@@ -4,6 +4,59 @@ Newest first. Each entry: **what**, **why**, and **how to reverse** if we change
 
 ---
 
+## 2026-07-21 — Demo affordances gated behind `?demo=1`
+
+**What.** The two testing-only controls — the "Demo" fake-ride button (ConnectionBar) and "Add demo
+session" seeder (HistoryPage) — are hidden by default and shown only when the page is opened with
+`?demo=1`. One flag in `src/app/flags.ts` (`demoEnabled`), read once at startup and consumed as a
+plain boolean in both components.
+
+**Why the query is *before* the hash** (`…/?demo=1#/sessions`, i.e. `location.search`). With
+HashRouter only the hash changes on in-app navigation, so a real query param on the document URL is
+stable for the page's lifetime — set demo once and every route keeps it on, with no router wiring.
+Putting it *inside* the hash (`#/sessions?demo=1`) would tie it to one route and drop on navigation.
+
+**Why gate them at all.** Real riders never need to fake a ride or seed fake history; those are dev
+affordances. Hiding them declutters the default UI while keeping them one URL param away for testing
+off the bike. Already-seeded demo sessions still show in history (they're real stored rows) — the
+flag hides the *controls*, not past data.
+
+**How to reverse.** Drop the `demoEnabled &&` guards in ConnectionBar/HistoryPage (and delete
+`flags.ts`) to always show them; or flip the default by inverting the flag.
+
+---
+
+## 2026-07-21 — i18n: hand-rolled typed catalog, en + nl
+
+**What.** Made every user-facing string translatable and added English + Dutch. New `src/i18n/`:
+`messages.ts` (a flat `en` catalog as the source of truth — its keys derive the `MessageKey` union,
+and `nl` is typed `Record<MessageKey, string>` so a missing key is a compile error) and `i18n.ts`
+(the runtime). Locale lives in a small Zustand store: components translate with the reactive
+`useT()` hook (re-renders on switch), and plain non-React modules — the thrown, user-visible error
+messages in `importer`/`detect`/`controller`/`exporter` — call the module-level `t()`, which reads
+the locale at throw-time. Metric names moved from literal `label` on `METRICS` to a `labelKey`
+i18n key. A header `<select>` (`LanguageSwitcher`) switches live; the choice is auto-detected from
+`navigator.languages` on first load, persisted to `localStorage`, and mirrored onto `<html lang>`.
+Verified in-browser: auto-detected nl, live-switched to en across every surface (tiles, graphs,
+dialogs, history, aria-labels), and the choice survived a route reload.
+
+**Why hand-rolled (no i18next/react-intl).** Same ethos as the rest of the app (own framer, own
+sparklines, minimal deps): the catalog is simple strings with `{name}` interpolation, so a ~60-line
+translator beats pulling in ~40 KB of library and its plural/ICU machinery. The typed-catalog trick
+gives us the one guarantee that actually matters here — no locale can silently drift from `en`.
+
+**Trade-off.** No built-in plural/gender/number-format rules; if a future string needs real
+pluralization we add a tiny helper or reconsider a library. Unit *symbols* (W, kg, bpm, km/h, …)
+are intentionally left as literals (international), so only words are translated. Two deep BLE-stack
+guard errors (`device has no GATT server`, `not connected`) stay untranslated — internal invariants
+a rider shouldn't ever see.
+
+**How to reverse / extend.** Add a locale: extend `Locale`/`LOCALES` and add one
+`Record<MessageKey, string>` object — TypeScript lists every key you still owe. To drop a library
+in later, keep the `t`/`useT` call sites and re-point them at the library's API.
+
+---
+
 ## 2026-07-21 — Client routing via HashRouter; session history is a real destination
 
 **What.** Added `react-router-dom` and split the single screen into routes: `/` (live dashboard),

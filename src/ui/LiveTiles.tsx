@@ -10,6 +10,7 @@ import type { LiveAverages } from '../store/useSessionStore'
 import type { NormalizedSample } from '../types'
 import { METRICS, visibleMetrics, type DashboardPrefs, type MetricKey } from '../prefs/dashboard'
 import { formatDuration } from '../util/time'
+import { useT, type TFunc } from '../i18n/i18n'
 
 type Variant = 'hero' | 'primary' | 'small'
 
@@ -39,12 +40,13 @@ function Tile({ label, value, unit, accent, variant, sub }: TileProps) {
 }
 
 /** Above/below-average arrow with a small deadband so it doesn't flicker around the mean. */
-function Trend({ value, avg }: { value?: number; avg?: number }) {
+function Trend({ value, avg, t }: { value?: number; avg?: number; t: TFunc }) {
   if (value === undefined || avg === undefined) return null
   const band = Math.max(5, avg * 0.03)
   const dir = value > avg + band ? 'up' : value < avg - band ? 'down' : 'flat'
   const char = dir === 'up' ? '▲' : dir === 'down' ? '▼' : '▪'
-  const label = dir === 'up' ? 'above average' : dir === 'down' ? 'below average' : 'at average'
+  const label =
+    dir === 'up' ? t('tiles.aboveAvg') : dir === 'down' ? t('tiles.belowAvg') : t('tiles.atAvg')
   return (
     <span className={`trend trend--${dir}`} aria-label={label}>
       {char}
@@ -97,6 +99,7 @@ function fmt(key: MetricKey, v: number | undefined): string {
 }
 
 export function LiveTiles({ prefs }: { prefs: DashboardPrefs }) {
+  const t = useT()
   const latest = useSessionStore((s) => s.latest)
   const avg = useSessionStore((s) => s.avg)
 
@@ -113,17 +116,17 @@ export function LiveTiles({ prefs }: { prefs: DashboardPrefs }) {
     heroAvg !== undefined ? (
       <>
         <span className="tile-avg">
-          avg {fmt(heroKey, heroAvg)}
+          {t('tiles.avg')} {fmt(heroKey, heroAvg)}
           {heroMeta.unit !== undefined && ` ${heroMeta.unit}`}
         </span>
-        <Trend value={heroValue} avg={heroAvg} />
+        <Trend value={heroValue} avg={heroAvg} t={t} />
       </>
     ) : undefined
 
   return (
-    <section className="tiles" aria-label="Live metrics">
+    <section className="tiles" aria-label={t('tiles.label')}>
       <Tile
-        label={heroMeta.label}
+        label={t(heroMeta.labelKey)}
         value={fmt(heroKey, heroValue)}
         unit={heroMeta.unit}
         accent={heroMeta.accent ?? 'var(--accent)'}
@@ -136,7 +139,7 @@ export function LiveTiles({ prefs }: { prefs: DashboardPrefs }) {
           {primary.map((key) => (
             <Tile
               key={key}
-              label={METRICS[key].label}
+              label={t(METRICS[key].labelKey)}
               value={fmt(key, valueOf(key, latest))}
               unit={METRICS[key].unit}
               accent={METRICS[key].accent}
@@ -151,7 +154,7 @@ export function LiveTiles({ prefs }: { prefs: DashboardPrefs }) {
           {small.map((key) => (
             <Tile
               key={key}
-              label={METRICS[key].label}
+              label={t(METRICS[key].labelKey)}
               value={fmt(key, valueOf(key, latest))}
               unit={METRICS[key].unit}
               variant="small"

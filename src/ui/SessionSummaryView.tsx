@@ -7,6 +7,7 @@ import type { StoredSession } from '../session/db'
 import type { SessionSample } from '../types'
 import { Sparkline } from './Sparkline'
 import { formatDuration } from '../util/time'
+import { useT } from '../i18n/i18n'
 
 function series(samples: SessionSample[], f: (s: SessionSample) => number | undefined): number[] {
   const out: number[] = []
@@ -38,6 +39,7 @@ export function SessionSummaryView({
   session: StoredSession
   samples: SessionSample[]
 }) {
+  const t = useT()
   const summary = session.summary
   const agg = session.aggregated
   const fmt = (v: number | undefined, digits = 0, suffix = ''): string =>
@@ -48,36 +50,42 @@ export function SessionSummaryView({
   return (
     <>
       <div className="stats">
-        <Stat label="Duration" value={summary ? formatDuration(summary.durationS) : '—'} />
-        <Stat label="Avg power" value={fmt(summary?.avgPowerW, 0, ' W')} />
-        <Stat label="Max power" value={fmt(summary?.maxPowerW, 0, ' W')} />
-        <Stat label="Avg HR" value={fmt(summary?.avgBpm, 0, ' bpm')} />
-        <Stat label="Max HR" value={fmt(summary?.maxBpm, 0, ' bpm')} />
-        <Stat label="Avg cadence" value={fmt(summary?.avgCadenceRpm, 0, ' rpm')} />
-        <Stat label="Distance" value={fmt(summary?.distanceKm, 2, ' km')} />
-        <Stat label="Energy" value={fmt(summary?.energyKcal, 0, ' kcal')} />
-        {iff !== undefined && <Stat label="IF" value={iff.toFixed(2)} />}
-        {tss !== undefined && <Stat label="TSS" value={tss.toFixed(0)} />}
+        <Stat
+          label={t('stat.duration')}
+          value={summary ? formatDuration(summary.durationS) : '—'}
+        />
+        <Stat label={t('stat.avgPower')} value={fmt(summary?.avgPowerW, 0, ' W')} />
+        <Stat label={t('stat.maxPower')} value={fmt(summary?.maxPowerW, 0, ' W')} />
+        <Stat label={t('stat.avgHr')} value={fmt(summary?.avgBpm, 0, ' bpm')} />
+        <Stat label={t('stat.maxHr')} value={fmt(summary?.maxBpm, 0, ' bpm')} />
+        <Stat label={t('stat.avgCadence')} value={fmt(summary?.avgCadenceRpm, 0, ' rpm')} />
+        <Stat label={t('stat.distance')} value={fmt(summary?.distanceKm, 2, ' km')} />
+        <Stat label={t('stat.energy')} value={fmt(summary?.energyKcal, 0, ' kcal')} />
+        {iff !== undefined && <Stat label={t('stat.if')} value={iff.toFixed(2)} />}
+        {tss !== undefined && <Stat label={t('stat.tss')} value={tss.toFixed(0)} />}
       </div>
 
       <div className="review-graphs">
         <Sparkline
           points={series(samples, (s) => s.powerW)}
           color="var(--accent)"
-          label="Power"
+          label={t('metric.power')}
           unit="W"
+          ariaLabel={t('spark.trend', { name: t('metric.power') })}
         />
         <Sparkline
           points={series(samples, (s) => s.bpm)}
           color="var(--hr)"
-          label="Heart rate"
+          label={t('metric.hr')}
           unit="bpm"
+          ariaLabel={t('spark.trend', { name: t('metric.hr') })}
         />
         <Sparkline
           points={series(samples, (s) => s.cadenceRpm)}
           color="var(--cadence)"
-          label="Cadence"
+          label={t('metric.cadence')}
           unit="rpm"
+          ariaLabel={t('spark.trend', { name: t('metric.cadence') })}
         />
       </div>
     </>

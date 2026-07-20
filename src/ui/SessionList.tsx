@@ -6,18 +6,20 @@
 import { Link } from 'react-router-dom'
 import type { StoredSession } from '../session/db'
 import { formatDuration } from '../util/time'
+import { useT, type TFunc } from '../i18n/i18n'
 
 function startedLabel(startedAtWall: number): string {
   return new Date(startedAtWall).toLocaleString()
 }
 
 /** One-line summary: duration · avg power · distance (whatever's available), else the short id. */
-function summaryLine(s: StoredSession): string {
+function summaryLine(s: StoredSession, t: TFunc): string {
   const sm = s.summary
   if (!sm) return s.id.slice(0, 8)
   const parts = [formatDuration(sm.durationS)]
-  if (sm.avgPowerW !== undefined) parts.push(`${sm.avgPowerW} W avg`)
-  if (sm.distanceKm !== undefined) parts.push(`${sm.distanceKm.toFixed(2)} km`)
+  if (sm.avgPowerW !== undefined) parts.push(t('list.powerAvg', { value: sm.avgPowerW }))
+  if (sm.distanceKm !== undefined)
+    parts.push(t('list.distance', { value: sm.distanceKm.toFixed(2) }))
   return parts.join(' · ')
 }
 
@@ -39,6 +41,7 @@ export function SessionList({
   onExportTcx,
   onDelete,
 }: Props) {
+  const t = useT()
   const showActions = !compact && (onExport !== undefined || onDelete !== undefined)
   return (
     <ul className="sessions-list">
@@ -47,14 +50,14 @@ export function SessionList({
           <Link
             className="session-open"
             to={`/sessions/${s.id}`}
-            aria-label={`Open session from ${startedLabel(s.startedAtWall)}`}
+            aria-label={t('list.open', { time: startedLabel(s.startedAtWall) })}
           >
             <span className="session-time">{startedLabel(s.startedAtWall)}</span>
             <span className="session-sub">
               {s.protocol !== undefined && (
                 <span className="proto-badge">{s.protocol.toUpperCase()}</span>
               )}
-              <span className="session-summary">{summaryLine(s)}</span>
+              <span className="session-summary">{summaryLine(s, t)}</span>
             </span>
           </Link>
           {showActions && (
@@ -66,7 +69,7 @@ export function SessionList({
                   onClick={() => onExport(s.id)}
                   disabled={busyId === s.id}
                 >
-                  JSON
+                  {t('export.jsonShort')}
                 </button>
               )}
               {onExportTcx !== undefined && (
@@ -76,7 +79,7 @@ export function SessionList({
                   onClick={() => onExportTcx(s.id)}
                   disabled={busyId === s.id}
                 >
-                  TCX
+                  {t('export.tcxShort')}
                 </button>
               )}
               {onDelete !== undefined && (
@@ -86,7 +89,7 @@ export function SessionList({
                   onClick={() => onDelete(s.id)}
                   disabled={busyId === s.id}
                 >
-                  Delete
+                  {t('common.delete')}
                 </button>
               )}
             </div>

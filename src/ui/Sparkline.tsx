@@ -11,6 +11,8 @@ interface SparklineProps {
   color?: string
   label?: string
   unit?: string
+  /** Accessible name for the chart. Callers pass a translated string; falls back to `label`. */
+  ariaLabel?: string
 }
 
 function fmtValue(v: number | undefined): string {
@@ -25,6 +27,7 @@ export function Sparkline({
   color = 'var(--accent)',
   label,
   unit,
+  ariaLabel,
 }: SparklineProps) {
   const pad = 2
   const n = points.length
@@ -73,7 +76,7 @@ export function Sparkline({
         height={height}
         preserveAspectRatio="none"
         role="img"
-        aria-label={label !== undefined ? `${label} trend` : 'trend'}
+        aria-label={ariaLabel ?? label ?? 'trend'}
       >
         {n === 0 ? (
           <line

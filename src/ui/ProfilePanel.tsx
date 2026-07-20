@@ -6,6 +6,7 @@
  */
 import { useState, type FormEvent } from 'react'
 import { loadProfile, saveProfile, clearProfile, type UserProfile } from '../profile/profile'
+import { useT } from '../i18n/i18n'
 
 function numOrUndef(s: string): number | undefined {
   const t = s.trim()
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export function ProfilePanel({ onClose, onChanged }: Props) {
+  const t = useT()
   const [saved, setSaved] = useState<UserProfile | null>(() => loadProfile())
   const [ftp, setFtp] = useState(() => str(saved?.ftpW))
   const [weight, setWeight] = useState(() => str(saved?.weightKg))
@@ -62,68 +64,65 @@ export function ProfilePanel({ onClose, onChanged }: Props) {
     setAge('')
     setName('')
     setColorMode(true)
-    setFlash('Profile deleted.')
+    setFlash(t('profile.deleted'))
     onChanged?.()
   }
 
   return (
     <form className="profile-form" onSubmit={onSave}>
-      <p className="profile-note">
-        Optional, stored only on this device. When set it's sent to the bike so it can show your FTP
-        zones (Coach-By-Color) and W/kg. Leave blank to keep the bike's own defaults.
-      </p>
+      <p className="profile-note">{t('profile.note')}</p>
 
       <div className="profile-grid">
         <label className="field-row">
           <span>
-            FTP <span className="field-unit">W</span>
+            {t('profile.ftp')} <span className="field-unit">W</span>
           </span>
           <input
             inputMode="numeric"
             value={ftp}
             onChange={(e) => setFtp(e.target.value)}
-            placeholder="e.g. 220"
+            placeholder={t('profile.phFtp')}
           />
         </label>
         <label className="field-row">
           <span>
-            Weight <span className="field-unit">kg</span>
+            {t('profile.weight')} <span className="field-unit">kg</span>
           </span>
           <input
             inputMode="numeric"
             value={weight}
             onChange={(e) => setWeight(e.target.value)}
-            placeholder="e.g. 75"
+            placeholder={t('profile.phWeight')}
           />
         </label>
         <label className="field-row">
           <span>
-            Max HR <span className="field-unit">bpm</span>
+            {t('profile.maxHr')} <span className="field-unit">bpm</span>
           </span>
           <input
             inputMode="numeric"
             value={maxHr}
             onChange={(e) => setMaxHr(e.target.value)}
-            placeholder="e.g. 185"
+            placeholder={t('profile.phMaxHr')}
           />
         </label>
         <label className="field-row">
           <span>
-            Age <span className="field-unit">yr</span>
+            {t('profile.age')} <span className="field-unit">{t('profile.unitYr')}</span>
           </span>
           <input
             inputMode="numeric"
             value={age}
             onChange={(e) => setAge(e.target.value)}
-            placeholder="optional"
+            placeholder={t('profile.phAge')}
           />
         </label>
         <label className="field-row profile-name">
-          <span>Name</span>
+          <span>{t('profile.name')}</span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="shown on the bike (initials only)"
+            placeholder={t('profile.phName')}
           />
         </label>
       </div>
@@ -134,20 +133,20 @@ export function ProfilePanel({ onClose, onChanged }: Props) {
           checked={colorMode}
           onChange={(e) => setColorMode(e.target.checked)}
         />
-        <span>Enable Coach-By-Color on the bike (front zone light)</span>
+        <span>{t('profile.colorMode')}</span>
       </label>
 
       {flash !== undefined && <div className="profile-flash">{flash}</div>}
 
       <div className="profile-actions">
         <button type="submit" className="btn btn-accent">
-          Save
+          {t('common.save')}
         </button>
       </div>
 
       {saved !== null && (
         <button type="button" className="profile-delete-link" onClick={onDelete}>
-          Delete profile
+          {t('profile.delete')}
         </button>
       )}
     </form>

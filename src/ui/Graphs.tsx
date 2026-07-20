@@ -6,6 +6,7 @@
 import { useSessionStore } from '../store/useSessionStore'
 import type { HistoryPoint } from '../store/useSessionStore'
 import { Sparkline } from './Sparkline'
+import { useT } from '../i18n/i18n'
 
 /** Pull one numeric field out of the history, keeping only points that actually have it. */
 function series(history: HistoryPoint[], pick: (p: HistoryPoint) => number | undefined): number[] {
@@ -18,6 +19,7 @@ function series(history: HistoryPoint[], pick: (p: HistoryPoint) => number | und
 }
 
 export function Graphs() {
+  const t = useT()
   const history = useSessionStore((s) => s.history)
 
   const power = series(history, (p) => p.powerW)
@@ -25,10 +27,28 @@ export function Graphs() {
   const cadence = series(history, (p) => p.cadenceRpm)
 
   return (
-    <section className="graphs" aria-label="Trends">
-      <Sparkline points={power} color="var(--accent)" label="Power" unit="W" />
-      <Sparkline points={bpm} color="var(--hr)" label="Heart rate" unit="bpm" />
-      <Sparkline points={cadence} color="var(--cadence)" label="Cadence" unit="rpm" />
+    <section className="graphs" aria-label={t('graphs.label')}>
+      <Sparkline
+        points={power}
+        color="var(--accent)"
+        label={t('metric.power')}
+        unit="W"
+        ariaLabel={t('spark.trend', { name: t('metric.power') })}
+      />
+      <Sparkline
+        points={bpm}
+        color="var(--hr)"
+        label={t('metric.hr')}
+        unit="bpm"
+        ariaLabel={t('spark.trend', { name: t('metric.hr') })}
+      />
+      <Sparkline
+        points={cadence}
+        color="var(--cadence)"
+        label={t('metric.cadence')}
+        unit="rpm"
+        ariaLabel={t('spark.trend', { name: t('metric.cadence') })}
+      />
     </section>
   )
 }

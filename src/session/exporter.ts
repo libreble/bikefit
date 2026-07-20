@@ -5,6 +5,7 @@
  */
 
 import type { SessionFile, SessionSummary } from '../types'
+import { t } from '../i18n/i18n'
 import { getSamples, getSession } from './db'
 import { buildTcx } from './tcx'
 
@@ -15,7 +16,7 @@ function isoStamp(ms: number): string {
 
 export async function buildSessionFile(sessionId: string): Promise<SessionFile> {
   const session = await getSession(sessionId)
-  if (!session) throw new Error(`session ${sessionId} not found`)
+  if (!session) throw new Error(t('error.sessionNotFound', { id: sessionId }))
 
   const samples = await getSamples(sessionId)
 

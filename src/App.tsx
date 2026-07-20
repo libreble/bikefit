@@ -10,16 +10,19 @@ import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { ConnectionBar } from './ui/ConnectionBar'
 import { ProfileDialog } from './ui/ProfileDialog'
 import { DashboardDialog } from './ui/DashboardDialog'
+import { LanguageSwitcher } from './ui/LanguageSwitcher'
 import { LivePage } from './pages/LivePage'
 import { HistoryPage } from './pages/HistoryPage'
 import { SessionPage } from './pages/SessionPage'
 import { loadProfile, profileLabel, type UserProfile } from './profile/profile'
 import { loadDashboard, type DashboardPrefs } from './prefs/dashboard'
+import { useT } from './i18n/i18n'
 
 const navClass = ({ isActive }: { isActive: boolean }): string =>
   `nav-link${isActive ? ' nav-link--active' : ''}`
 
 export function App() {
+  const t = useT()
   const [profileOpen, setProfileOpen] = useState(false)
   const [profile, setProfile] = useState<UserProfile | null>(() => loadProfile())
   const [dashOpen, setDashOpen] = useState(false)
@@ -29,27 +32,28 @@ export function App() {
     <div className="app">
       <header className="app-header">
         <div className="app-titlebar">
-          <h1 className="app-title">Bikefit — ICG IC-6</h1>
+          <h1 className="app-title">{t('app.title')}</h1>
           <div className="app-actions">
+            <LanguageSwitcher />
             <button type="button" className="btn btn-ghost" onClick={() => setDashOpen(true)}>
-              Customize
+              {t('header.customize')}
             </button>
             <button
               type="button"
               className={`btn btn-ghost profile-btn${profile ? '' : ' profile-btn--cta'}`}
               onClick={() => setProfileOpen(true)}
             >
-              {profileLabel(profile)}
+              {profileLabel(profile, t)}
             </button>
           </div>
         </div>
 
-        <nav className="app-nav" aria-label="Sections">
+        <nav className="app-nav" aria-label={t('nav.label')}>
           <NavLink to="/" end className={navClass}>
-            Live
+            {t('nav.live')}
           </NavLink>
           <NavLink to="/sessions" className={navClass}>
-            History
+            {t('nav.history')}
           </NavLink>
         </nav>
 

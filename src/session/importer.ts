@@ -7,6 +7,7 @@
 
 import type { SessionFile, SessionSample } from '../types'
 import { uuid } from '../util/time'
+import { t } from '../i18n/i18n'
 import { addSamples, putSession, type StoredSample, type StoredSession } from './db'
 
 function isSessionFile(v: unknown): v is SessionFile {
@@ -27,14 +28,14 @@ export async function importSessionFile(text: string): Promise<string> {
   try {
     parsed = JSON.parse(text)
   } catch {
-    throw new Error('Not valid JSON.')
+    throw new Error(t('error.notJson'))
   }
   if (!isSessionFile(parsed)) {
     const version = (parsed as { version?: unknown } | null)?.version
     throw new Error(
       version !== undefined && version !== 2
-        ? `Unsupported session file (version ${String(version)}; expected 2).`
-        : 'Not a Bikefit session file.',
+        ? t('error.unsupportedVersion', { version: String(version) })
+        : t('error.notSessionFile'),
     )
   }
 

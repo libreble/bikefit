@@ -7,8 +7,11 @@ import { useState, type ChangeEvent } from 'react'
 import * as controller from '../app/controller'
 import { SessionList } from '../ui/SessionList'
 import { useSessions } from '../ui/useSessions'
+import { useT } from '../i18n/i18n'
+import { demoEnabled } from '../app/flags'
 
 export function HistoryPage() {
+  const t = useT()
   const { sessions, loading, error: listError, refresh } = useSessions()
   const [actionError, setActionError] = useState<string | undefined>(undefined)
   const [busyId, setBusyId] = useState<string | undefined>(undefined)
@@ -66,18 +69,20 @@ export function HistoryPage() {
   return (
     <div className="page">
       <div className="page-head">
-        <h2 className="page-title">Session history</h2>
+        <h2 className="page-title">{t('history.title')}</h2>
         <div className="page-actions">
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => void onSeed()}
-            disabled={seeding}
-          >
-            {seeding ? 'Adding…' : 'Add demo session'}
-          </button>
+          {demoEnabled && (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => void onSeed()}
+              disabled={seeding}
+            >
+              {seeding ? t('history.adding') : t('history.addDemo')}
+            </button>
+          )}
           <label className="btn btn-ghost import-btn">
-            Import JSON
+            {t('history.importJson')}
             <input
               type="file"
               accept=".json,application/json"
@@ -91,7 +96,7 @@ export function HistoryPage() {
             onClick={() => void refresh()}
             disabled={loading}
           >
-            {loading ? 'Refreshing…' : 'Refresh'}
+            {loading ? t('history.refreshing') : t('history.refresh')}
           </button>
         </div>
       </div>
@@ -103,9 +108,7 @@ export function HistoryPage() {
       )}
 
       {sessions.length === 0 ? (
-        <div className="sessions-empty">
-          {loading ? 'Loading…' : 'No sessions yet. Ride the bike, or add a demo session.'}
-        </div>
+        <div className="sessions-empty">{loading ? t('common.loading') : t('history.empty')}</div>
       ) : (
         <SessionList
           sessions={sessions}

@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, type MouseEvent } from 'react'
 import { ProfilePanel } from './ProfilePanel'
+import { useT } from '../i18n/i18n'
 
 interface Props {
   open: boolean
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function ProfileDialog({ open, onClose, onChanged }: Props) {
+  const t = useT()
   const ref = useRef<HTMLDialogElement>(null)
 
   // Drive the native modal from the `open` prop (showModal gives us backdrop + focus trap + Esc).
@@ -33,7 +35,7 @@ export function ProfileDialog({ open, onClose, onChanged }: Props) {
     <dialog
       ref={ref}
       className="modal"
-      aria-label="Rider profile"
+      aria-label={t('profile.title')}
       onClose={onClose}
       onClick={onDialogClick}
     >
@@ -41,8 +43,13 @@ export function ProfileDialog({ open, onClose, onChanged }: Props) {
       {open && (
         <div className="modal-card">
           <div className="modal-head">
-            <h2 className="modal-title">Rider profile</h2>
-            <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
+            <h2 className="modal-title">{t('profile.title')}</h2>
+            <button
+              type="button"
+              className="modal-close"
+              onClick={onClose}
+              aria-label={t('common.close')}
+            >
               ×
             </button>
           </div>

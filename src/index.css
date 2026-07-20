@@ -706,6 +706,69 @@ h3 {
   gap: 8px;
 }
 
+/* Header language picker — a native <select> dressed as a pill: globe on the left, chevron on the
+   right, native arrow removed. The wrapper draws the border/background; the select is transparent. */
+.lang-picker {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition:
+    border-color 0.12s ease,
+    filter 0.12s ease;
+}
+
+.lang-picker:hover {
+  filter: brightness(1.12);
+}
+
+.lang-picker:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.lang-picker__globe,
+.lang-picker__caret {
+  position: absolute;
+  pointer-events: none; /* clicks fall through to the select */
+  color: var(--muted);
+}
+
+.lang-picker__globe {
+  left: 10px;
+}
+
+.lang-picker__caret {
+  right: 9px;
+}
+
+/* The real control: transparent, native arrow removed, padded to clear the two icons. */
+.lang-picker__select {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: inherit;
+  padding: 9px 32px 9px 32px;
+  cursor: pointer;
+}
+
+.lang-picker__select:focus {
+  outline: none; /* the wrapper's :focus-within ring stands in */
+}
+
+/* Native option list is OS-drawn; give it readable colors where the platform honors them. */
+.lang-picker__select option {
+  color: var(--text);
+  background: var(--panel);
+}
+
 /* ---- hero tile average + trend ---- */
 
 .tile-sub {

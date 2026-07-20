@@ -7,6 +7,7 @@
 
 import type { TrainerAdapter } from '../types'
 import type { IcgUserData } from '../decode/icgEncoder'
+import { t } from '../i18n/i18n'
 import { ICG_SERVICE } from './constants'
 import { IcgUartAdapter } from './adapters/IcgUartAdapter'
 
@@ -35,5 +36,5 @@ export async function detect(
     return { adapter: new IcgUartAdapter(server, device, opts.getUserData), services: uuids }
   }
 
-  throw new Error('No supported trainer service found. Present: ' + uuids.join(', ') + '.')
+  throw new Error(t('error.noTrainerService', { present: uuids.join(', ') }))
 }

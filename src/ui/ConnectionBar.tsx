@@ -6,18 +6,22 @@ import { useState } from 'react'
 import * as controller from '../app/controller'
 import { useSessionStore } from '../store/useSessionStore'
 import type { ConnStatus } from '../store/useSessionStore'
+import { useT } from '../i18n/i18n'
+import type { MessageKey } from '../i18n/messages'
+import { demoEnabled } from '../app/flags'
 
-const STATUS_LABEL: Record<ConnStatus, string> = {
-  idle: 'Idle',
-  requesting: 'Requesting…',
-  connecting: 'Connecting…',
-  connected: 'Connected',
-  reconnecting: 'Reconnecting…',
-  disconnected: 'Disconnected',
-  error: 'Error',
+const STATUS_LABEL: Record<ConnStatus, MessageKey> = {
+  idle: 'conn.status.idle',
+  requesting: 'conn.status.requesting',
+  connecting: 'conn.status.connecting',
+  connected: 'conn.status.connected',
+  reconnecting: 'conn.status.reconnecting',
+  disconnected: 'conn.status.disconnected',
+  error: 'conn.status.error',
 }
 
 export function ConnectionBar() {
+  const t = useT()
   const status = useSessionStore((s) => s.status)
   const device = useSessionStore((s) => s.device)
   const protocol = useSessionStore((s) => s.protocol)
@@ -47,8 +51,8 @@ export function ConnectionBar() {
     else void run(controller.connect)
   }
 
-  const buttonLabel = connected ? 'Disconnect' : busy ? 'Cancel' : 'Connect'
-  const deviceName = device?.name ?? 'No device'
+  const buttonLabel = connected ? t('conn.disconnect') : busy ? t('conn.cancel') : t('conn.connect')
+  const deviceName = device?.name ?? t('conn.noDevice')
 
   return (
     <div className="connbar">
@@ -61,21 +65,21 @@ export function ConnectionBar() {
         {buttonLabel}
       </button>
 
-      {!connected && !busy && (
+      {demoEnabled && !connected && !busy && (
         <button
           type="button"
           className="btn btn-ghost demo-btn"
           onClick={() => void run(controller.connectDemo)}
           disabled={pending}
-          title="Simulate a ride without a bike (for testing the UI)"
+          title={t('conn.demoTitle')}
         >
-          Demo
+          {t('conn.demo')}
         </button>
       )}
 
       <div className="conn-state">
         <span className={`status-dot status-${status}`} aria-hidden="true" />
-        <span className="status-label">{STATUS_LABEL[status]}</span>
+        <span className="status-label">{t(STATUS_LABEL[status])}</span>
       </div>
 
       <div className="conn-device">

@@ -9,8 +9,10 @@ import { CurrentSessionExport } from '../ui/CurrentSessionExport'
 import { SessionList } from '../ui/SessionList'
 import { useSessions } from '../ui/useSessions'
 import type { DashboardPrefs } from '../prefs/dashboard'
+import { useT } from '../i18n/i18n'
 
 export function LivePage({ prefs }: { prefs: DashboardPrefs }) {
+  const t = useT()
   const { sessions } = useSessions()
   const recent = sessions.slice(0, 3)
 
@@ -26,13 +28,13 @@ export function LivePage({ prefs }: { prefs: DashboardPrefs }) {
 
         <div className="panel">
           <div className="panel-head">
-            <h3 className="panel-h">Recent rides</h3>
+            <h3 className="panel-h">{t('live.recentTitle')}</h3>
             <Link className="link" to="/sessions">
-              View all →
+              {t('live.viewAll')}
             </Link>
           </div>
           {recent.length === 0 ? (
-            <div className="sessions-empty">No rides yet.</div>
+            <div className="sessions-empty">{t('live.noRides')}</div>
           ) : (
             <SessionList sessions={recent} compact />
           )}

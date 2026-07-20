@@ -25,6 +25,7 @@ import { currentUserData } from '../profile/profile'
 import type { SessionSample } from '../types'
 import { useSessionStore } from '../store/useSessionStore'
 import { uuid } from '../util/time'
+import { t } from '../i18n/i18n'
 
 let connection: BleConnection | null = null
 let adapter: TrainerAdapter | null = null
@@ -37,10 +38,7 @@ let demo = false
 const store = () => useSessionStore.getState()
 
 /** (Re)attach an adapter to a freshly connected server. Runs on first connect and each reconnect. */
-async function onReady(
-  server: BluetoothRemoteGATTServer,
-  device: BluetoothDevice,
-): Promise<void> {
+async function onReady(server: BluetoothRemoteGATTServer, device: BluetoothDevice): Promise<void> {
   const { adapter: a, services } = await detect(server, device, { getUserData: currentUserData })
   adapter = a
   store().setDevice(a.deviceInfo(), a.protocol)
@@ -164,12 +162,12 @@ export async function disconnect(): Promise<void> {
 }
 
 export async function exportCurrentSession(): Promise<void> {
-  if (!sessionId) throw new Error('no session to export')
+  if (!sessionId) throw new Error(t('error.noSessionToExport'))
   await exportSession(sessionId)
 }
 
 export async function exportCurrentSessionTcx(): Promise<void> {
-  if (!sessionId) throw new Error('no session to export')
+  if (!sessionId) throw new Error(t('error.noSessionToExport'))
   await exportSessionTcx(sessionId)
 }
 
@@ -208,7 +206,7 @@ export interface SessionDetail {
 /** Load a past session's metadata + full sample series for review. */
 export async function loadSessionDetail(id: string): Promise<SessionDetail> {
   const session = await getSession(id)
-  if (!session) throw new Error(`session ${id} not found`)
+  if (!session) throw new Error(t('error.sessionNotFound', { id }))
   const samples = await getSamples(id)
   return { session, samples }
 }

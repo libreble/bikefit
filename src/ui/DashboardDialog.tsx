@@ -12,6 +12,7 @@ import {
   type DashboardPrefs,
   type MetricKey,
 } from '../prefs/dashboard'
+import { useT } from '../i18n/i18n'
 
 interface Props {
   open: boolean
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export function DashboardDialog({ open, onClose, onChanged }: Props) {
+  const t = useT()
   const ref = useRef<HTMLDialogElement>(null)
   const [prefs, setPrefs] = useState<DashboardPrefs>(() => loadDashboard())
 
@@ -69,23 +71,25 @@ export function DashboardDialog({ open, onClose, onChanged }: Props) {
     <dialog
       ref={ref}
       className="modal"
-      aria-label="Customize dashboard"
+      aria-label={t('dash.title')}
       onClose={onClose}
       onClick={onDialogClick}
     >
       {open && (
         <div className="modal-card">
           <div className="modal-head">
-            <h2 className="modal-title">Customize dashboard</h2>
-            <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
+            <h2 className="modal-title">{t('dash.title')}</h2>
+            <button
+              type="button"
+              className="modal-close"
+              onClick={onClose}
+              aria-label={t('common.close')}
+            >
               ×
             </button>
           </div>
 
-          <p className="profile-note">
-            The first shown metric is the hero (big) tile. Reorder with the arrows; uncheck a metric
-            to hide it.
-          </p>
+          <p className="profile-note">{t('dash.note')}</p>
 
           <ul className="dash-list">
             {prefs.order.map((key, i) => {
@@ -94,16 +98,16 @@ export function DashboardDialog({ open, onClose, onChanged }: Props) {
                 <li key={key} className={`dash-row${visible ? '' : ' dash-row--hidden'}`}>
                   <label className="dash-toggle">
                     <input type="checkbox" checked={visible} onChange={() => toggle(key)} />
-                    <span className="dash-name">{METRICS[key].label}</span>
+                    <span className="dash-name">{t(METRICS[key].labelKey)}</span>
                   </label>
-                  {key === firstVisible && <span className="dash-hero-tag">hero</span>}
+                  {key === firstVisible && <span className="dash-hero-tag">{t('dash.hero')}</span>}
                   <div className="dash-move">
                     <button
                       type="button"
                       className="btn btn-ghost dash-arrow"
                       onClick={() => move(i, -1)}
                       disabled={i === 0}
-                      aria-label={`Move ${METRICS[key].label} up`}
+                      aria-label={t('dash.moveUp', { name: t(METRICS[key].labelKey) })}
                     >
                       ↑
                     </button>
@@ -112,7 +116,7 @@ export function DashboardDialog({ open, onClose, onChanged }: Props) {
                       className="btn btn-ghost dash-arrow"
                       onClick={() => move(i, 1)}
                       disabled={i === prefs.order.length - 1}
-                      aria-label={`Move ${METRICS[key].label} down`}
+                      aria-label={t('dash.moveDown', { name: t(METRICS[key].labelKey) })}
                     >
                       ↓
                     </button>
@@ -124,7 +128,7 @@ export function DashboardDialog({ open, onClose, onChanged }: Props) {
 
           <div className="profile-actions">
             <button type="button" className="btn btn-accent" onClick={onSave}>
-              Save
+              {t('common.save')}
             </button>
           </div>
           <button
@@ -132,7 +136,7 @@ export function DashboardDialog({ open, onClose, onChanged }: Props) {
             className="profile-delete-link"
             onClick={() => setPrefs(defaultDashboard())}
           >
-            Reset to default
+            {t('dash.reset')}
           </button>
         </div>
       )}

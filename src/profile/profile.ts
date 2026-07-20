@@ -7,6 +7,7 @@
  */
 
 import type { IcgUserData } from '../decode/icgEncoder'
+import type { TFunc } from '../i18n/i18n'
 
 export interface UserProfile {
   /** Indoor FTP, watts — the one field that unlocks the bike's colour zones / IF / TSS. */
@@ -48,11 +49,12 @@ export function hasProfile(): boolean {
   return localStorage.getItem(KEY) != null
 }
 
-/** Header button label: invite when unset, the rider's name when set (falls back to "Profile"). */
-export function profileLabel(p: UserProfile | null): string {
-  if (!p) return 'Set your profile'
+/** Header button label: invite when unset, the rider's name when set (falls back to "Profile").
+ * Takes the translator so the fallback/CTA follow the selected language; a set name is shown verbatim. */
+export function profileLabel(p: UserProfile | null, t: TFunc): string {
+  if (!p) return t('profile.cta')
   const nm = p.name?.trim()
-  return nm ? nm : 'Profile'
+  return nm ? nm : t('profile.fallback')
 }
 
 /** Split a display name into first + surname initials for the bike console. */

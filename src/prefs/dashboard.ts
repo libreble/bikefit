@@ -5,18 +5,14 @@
  * row, the rest the small row. Reordering and show/hide both edit this one structure.
  */
 
+import type { MessageKey } from '../i18n/messages'
+
 export type MetricKey =
-  | 'power'
-  | 'cadence'
-  | 'hr'
-  | 'speed'
-  | 'resistance'
-  | 'distance'
-  | 'calories'
-  | 'elapsed'
+  'power' | 'cadence' | 'hr' | 'speed' | 'resistance' | 'distance' | 'calories' | 'elapsed'
 
 export interface MetricMeta {
-  label: string
+  /** i18n key for the metric's display name; render via the app's `t()`. */
+  labelKey: MessageKey
   unit?: string
   digits: number
   accent?: string
@@ -24,16 +20,17 @@ export interface MetricMeta {
   isTime?: boolean
 }
 
-/** Static per-metric display metadata, shared by the dashboard and its settings panel. */
+/** Static per-metric display metadata, shared by the dashboard and its settings panel. Labels are
+ * i18n keys (not literals) so every metric name follows the selected language. */
 export const METRICS: Record<MetricKey, MetricMeta> = {
-  power: { label: 'Power', unit: 'W', digits: 0, accent: 'var(--accent)' },
-  cadence: { label: 'Cadence', unit: 'rpm', digits: 0, accent: 'var(--cadence)' },
-  hr: { label: 'Heart rate', unit: 'bpm', digits: 0, accent: 'var(--hr)' },
-  speed: { label: 'Speed', unit: 'km/h', digits: 1, accent: 'var(--speed)' },
-  resistance: { label: 'Resistance', digits: 0 },
-  distance: { label: 'Distance', unit: 'km', digits: 2 },
-  calories: { label: 'Calories', unit: 'kcal', digits: 0 },
-  elapsed: { label: 'Elapsed', digits: 0, isTime: true },
+  power: { labelKey: 'metric.power', unit: 'W', digits: 0, accent: 'var(--accent)' },
+  cadence: { labelKey: 'metric.cadence', unit: 'rpm', digits: 0, accent: 'var(--cadence)' },
+  hr: { labelKey: 'metric.hr', unit: 'bpm', digits: 0, accent: 'var(--hr)' },
+  speed: { labelKey: 'metric.speed', unit: 'km/h', digits: 1, accent: 'var(--speed)' },
+  resistance: { labelKey: 'metric.resistance', digits: 0 },
+  distance: { labelKey: 'metric.distance', unit: 'km', digits: 2 },
+  calories: { labelKey: 'metric.calories', unit: 'kcal', digits: 0 },
+  elapsed: { labelKey: 'metric.elapsed', digits: 0, isTime: true },
 }
 
 /** Canonical order (also the default priority) — the source of truth for "all metrics". */
