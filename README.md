@@ -5,8 +5,9 @@ Local-first: no accounts, no cloud, no network calls at runtime — everything l
 browser (IndexedDB). Talks to the bike over the ICG proprietary Nordic-UART protocol
 (reverse-engineered — see [`PROTOCOL.md`](./PROTOCOL.md)).
 
-See [`PLAN.md`](./PLAN.md) for the roadmap, [`DECISIONS.md`](./DECISIONS.md) for why things are
-the way they are, and [`PROGRESS.md`](./PROGRESS.md) for current status.
+See [`PLAN.md`](./PLAN.md) for the roadmap, [`TODO.md`](./TODO.md) for the near-term backlog,
+[`DECISIONS.md`](./DECISIONS.md) for why things are the way they are, and
+[`PROGRESS.md`](./PROGRESS.md) for current status.
 
 ## Run it
 
