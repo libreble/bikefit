@@ -238,6 +238,57 @@ almost certainly give you **no left/right balance**.
 
 ---
 
+## 8a. User-data handshake — msg 1/2 (`GET`/`SET_ALL_USER_DATA`) — how to activate the bike
+
+Reversed from `setAllUserData` + the RX dispatch in the app bundle (`main.*.js`, lines ~15326 /
+~15900). This is what makes the bike's **Coach-By-Color** front light and FTP-based metrics work.
+
+**Trigger (reactive).** On connect the bike sends **`GET_ALL_USER_DATA` (msg 1)**; the app answers
+it immediately, and **only** here (not proactively, not on FTP change):
+
+```js
+case GET_ALL_USER_DATA: this.sendUserDataFromAppToBike();   // → setAllUserData(user, colorMode)
+```
+
+If you never answer msg 1, the bike never receives FTP/weight → **Coach-By-Color never activates**
+even though the live stream (msg 12) keeps flowing — msg 12 is FTP-independent. *Confirmed in a
+real capture: the bike sent msg 1 at ~0.3 s, our PWA ignored it, and the on-bike zones stayed dark.*
+
+**`SET_ALL_USER_DATA` (msg 2) payload — fixed 10 bytes** (`P = new Uint8Array(10)`), big-endian:
+
+| off | field | type | notes |
+|---:|---|---|---|
+| 0 | gender | u8 bit0 | app sets bit0=1 when `gender===0`; cosmetic |
+| 1 | age (years) | u8 | app computes `currentYear − birthyear` |
+| 2 | weight | u8 (kg) | enables W/kg |
+| 3 | fitness_level | u8 | profile field |
+| 4–5 | **ftp_indoor** | **u16 BE (W)** | **the field that drives zones / IF / TSS** |
+| 6 | heart_max_rate | u8 (bpm) | enables %HRmax |
+| 7 | **colorMode** | u8 bit0 | 1 = enable Coach-By-Color (front light zones) |
+| 8 | first-name initial | u8 | first char code; cosmetic (bike display) |
+| 9 | surname initial | u8 | first char code; cosmetic |
+
+Framed by the shared codec (§2): `FF 0C 02 <10 bytes> CHK 55` (LEN = 10+2 = 0x0C, msgId = 2, CHK =
+XOR of LEN..last data byte). The app's `encodeMessage` / `calcChecksum` are byte-identical to §2.
+
+**Making it optional (our PWA has no login).** The app guards on `this.user` ("User not logged
+in"); we have no accounts, so build a synthetic profile from whatever the user set in-app and
+default unset numerics to **0**. Only **ftp_indoor (4–5)** is needed for zones; weight → W/kg,
+maxHR → %HRmax; gender/age/fitness/initials are cosmetic. Set **colorMode (7) = 1** to light up the
+bike. Do **not** derive age from an unset `birthyear` (that yields the current year) — send 0.
+
+**Bonus:** the bike computes its aggregated IF/TSS/zones from *this* FTP, so answering msg 1 with a
+correct FTP also makes the bike's own `AGGREGATED_STREAM` (msg 13) meaningful in real time — the
+earlier "IF 1.3 inflated" artifact was just the bike defaulting FTP because msg 1 went unanswered.
+
+**How the app consumes msg 13.** RX dispatch decodes it straight to an RxJS subject
+(`aggregatedDataSource.next(decodeIcgAggregatedData(...))`); the workout/summary page subscribes and
+**renders the bike's values directly** (time-in-zone histogram, avg/max/IF/TSS tiles) — it does
+**not** recompute from the live stream. So our plan to recompute app-side from the stored power
+series (to allow post-hoc FTP correction) is a deliberate, better-than-stock divergence.
+
+---
+
 ## 9. Impact on the plan
 
 - The **core decoder is the ICG UART framer + `decodeIcgLive`** (§2, §4), *not* CPS/HR

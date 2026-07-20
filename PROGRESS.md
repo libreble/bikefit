@@ -2,6 +2,55 @@
 
 Running status so anyone (incl. future me) can pick this up. Newest first.
 
+## 2026-07-12 — FTP / user-data handshake implemented (opt-in profile)
+
+Reversed `setAllUserData` + the RX dispatch from the app bundle → **PROTOCOL.md §8a** (fixed 10-byte
+`SET_ALL_USER_DATA` @ msg 2; FTP is u16 BE @ bytes 4–5; byte 7 = colorMode; the app answers msg 1
+reactively). Built on it:
+- **Rider profile** as a **modal popup** opened from a header button (`src/ui/ProfileDialog.tsx`,
+  native `<dialog>`, off the main page for mobile) — FTP / weight / maxHR / age / name /
+  Coach-By-Color, **localStorage**, Save + **Delete** (`src/profile/profile.ts`,
+  `src/ui/ProfilePanel.tsx`). Browser-verified: open/save/flash, backdrop+Esc close, localStorage
+  survives reload, Delete disabled until a profile exists.
+- Adapter now answers `GET_ALL_USER_DATA` with the profile — **opt-in: silent if no profile saved**
+  (`IcgUartAdapter.autoRespond`; provider threaded via `detect(..., {getUserData})`).
+- Encoder `encodeIcgAllUserData` **verified byte-exact** (frame `ff0c02…3055`) + framer round-trip
+  (Node type-strip harness, staged from real source). typecheck / lint / build all green.
+- **Decision:** no live recompute — profile→bike→accurate msg-13 numbers; app-side recompute is
+  historical-only (needs the persistence pivot). See DECISIONS.md (2026-07-12).
+- **Aggregated interval (vendor app):** bike pushes LIVE+AGG *paired* at ~1 Hz; the app does no
+  polling and no `throttleTime`/`sampleTime` — it consumes every message.
+- **RE source preserved:** beautified bundle + base APK copied out of volatile /tmp to `~/icg-re/`.
+
+**PENDING (needs the bike):** confirm the reply actually lights up Coach-By-Color and that the
+bike's `AGGREGATED_STREAM` IF/TSS become sane once a real FTP is sent (they were inflated when msg 1
+went unanswered). Set a profile with your real FTP, connect, watch the front light + the summary.
+
+## 2026-07-12 — North-star pivot + session log analyzed
+
+**North star changed → multiplayer spinning app.** Lobbies joined by a 4-letter code, shared
+live sessions; later gamification (power-ramp "duels"). **Deferred — finish the single-user core
+first, stay local/offline. No multiplayer code yet.** Rationale + the offline-vs-relay tension:
+see DECISIONS.md (2026-07-12).
+
+**Session log analyzed (the NEXT item below — DONE).** User exported two `SessionFile` JSONs
+(start + end of one ~1 h IC-6 gym ride). Findings:
+- **Decoder is clean on real field data** — 524 frames → 176 messages across both files, **zero**
+  `ok:false`, zero bad checksums, only the expected msgIds (12 LIVE, 13 AGGREGATED, 1 GET_USER).
+- **`ftpPercent` scaling resolved** (was TBC): plain integer % of FTP. 43 W→27%, 70 W→43%,
+  82 W→51% all imply **FTP ≈ 160 W** configured in the bike. Field = `round(power/FTP×100)`.
+- **`brakeLevel` confirmed live** (byte 12): 0→14 warmup, 22→35 hard finish. Observed range 0–35.
+- **`workoutTime` counts active pedaling, not wall time** (advanced 54 min over 58 min wall).
+- **HR = 0 everywhere** — no strap paired to console; bytes 5–6 decode fine, just empty.
+- **Session state persists on the bike across app reconnects** — file 2 was a fresh app session
+  (new session/device id) yet resumed at 3344 s / 33.4 km / 743 kcal with full aggregates.
+- **Caveat:** aggregated `IF 1.3 / TSS 164` are inflated because the bike's FTP (~160 W) is below
+  the rider's real FTP; `powerMax 303` / `cadenceMax 135` come from the unlogged mid-ride. The
+  app should surface/override FTP rather than trust bike IF/TSS. (Not yet folded into PROTOCOL.md.)
+
+**Near-term focus:** finish the single-user core (reliable connect → correct live tiles →
+record/export). Multiplayer is later.
+
 ## 2026-07-12 (at the bike) — FIRST CONNECT SUCCESS ✅
 
 First real ride: **connected on the first try, most live values visible in the app.** The
@@ -12,7 +61,7 @@ oracle-proven decoder works against real IC-6 hardware. Field notes:
   open question: no RX handshake needed to begin the live stream.
 - "Most" values, not all — some tiles may be blank/wrong; the log dump will pin down which.
 
-### → NEXT AGENT: analyze the exported session log
+### → ~~NEXT AGENT: analyze the exported session log~~ — DONE 2026-07-12 (see top entry)
 
 The user will paste an exported **SessionFile JSON** (app → "Export session (JSON)"). It's
 self-contained (schema in `src/types.ts`):

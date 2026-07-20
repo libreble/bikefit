@@ -12,7 +12,7 @@ import type { AdapterEvents, Clock, DeviceInfo, TrainerAdapter } from '../../typ
 import { ICG_RX_CHAR, ICG_SERVICE, ICG_TX_CHAR } from '../constants'
 import { IcgFramer, type IcgFrame } from '../../decode/icgFramer'
 import { decodeIcgMessage, ICG_MSG } from '../../decode/icgMessages'
-import { encodeIcgFrame } from '../../decode/icgEncoder'
+import { encodeIcgFrame, encodeIcgAllUserData, type IcgUserData } from '../../decode/icgEncoder'
 import { bytesToHex } from '../../util/hex'
 
 export class IcgUartAdapter implements TrainerAdapter {
@@ -25,10 +25,17 @@ export class IcgUartAdapter implements TrainerAdapter {
   private now: Clock = () => 0
   private readonly server: BluetoothRemoteGATTServer
   private readonly info: DeviceInfo
+  /** Rider profile provider for the GET_ALL_USER_DATA reply; returns null → stay silent (opt-in). */
+  private readonly getUserData: () => IcgUserData | null
 
-  constructor(server: BluetoothRemoteGATTServer, device: BluetoothDevice) {
+  constructor(
+    server: BluetoothRemoteGATTServer,
+    device: BluetoothDevice,
+    getUserData: () => IcgUserData | null = () => null,
+  ) {
     this.server = server
     this.info = device.name ? { name: device.name, id: device.id } : { id: device.id }
+    this.getUserData = getUserData
   }
 
   deviceInfo(): DeviceInfo {
@@ -86,12 +93,22 @@ export class IcgUartAdapter implements TrainerAdapter {
     this.autoRespond(frame.msgId)
   }
 
-  /** Mirror the official app's low-risk handshake bits. Nothing that could wedge the bike. */
+  /** Mirror the official app's handshake replies (PROTOCOL.md §8a). Nothing that could wedge the bike. */
   private autoRespond(msgId: number): void {
     if (msgId === ICG_MSG.GET_PHONE_NAME) {
       const name = new TextEncoder().encode('Bikefit')
       void this.sendCommand(encodeIcgFrame(ICG_MSG.SET_PHONE_NAME, name)).catch((e) =>
         console.warn('[icg] phone-name reply failed', e),
+      )
+      return
+    }
+    if (msgId === ICG_MSG.GET_ALL_USER_DATA) {
+      // Opt-in: only answer if the rider saved a profile. No profile → stay silent and the bike
+      // keeps its own defaults (no Coach-By-Color, bike-default FTP).
+      const user = this.getUserData()
+      if (!user) return
+      void this.sendCommand(encodeIcgAllUserData(user)).catch((e) =>
+        console.warn('[icg] user-data reply failed', e),
       )
     }
   }

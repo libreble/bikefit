@@ -4,6 +4,52 @@ Newest first. Each entry: **what**, **why**, and **how to reverse** if we change
 
 ---
 
+## 2026-07-12 — FTP/user-data handshake: opt-in local profile, no live recompute
+
+**What.** Added a rider **profile** (FTP, weight, maxHR, age, name, Coach-By-Color toggle) stored
+in **localStorage** (`src/profile/profile.ts`), editable + deletable on a settings panel
+(`src/ui/ProfilePanel.tsx`). When a profile exists, the ICG adapter answers the bike's
+`GET_ALL_USER_DATA` (msg 1) with `SET_ALL_USER_DATA` (msg 2) — the 10-byte payload reversed in
+PROTOCOL.md §8a. Encoder (`encodeIcgAllUserData`) verified byte-exact + framer round-trip.
+
+**Why opt-in.** Don't push a feature users didn't ask for; on a shared gym bike, silently
+overwriting the console's user is undesirable. A saved profile *is* the explicit opt-in — with none,
+the adapter stays silent and the bike keeps its own defaults (no Coach-By-Color, bike-default FTP).
+
+**No live recompute.** We do **not** recompute IF/TSS/zones live. The profile's FTP goes to the
+bike, and the bike returns accurate numbers in its own `AGGREGATED_STREAM` (msg 13), which we just
+display (as the vendor app does — it never recomputes either). App-side recompute is reserved for
+**historical sessions** (correcting FTP after a ride) and needs the stored power series (the
+persistence pivot, still pending). No profile = you accept the bike's default-FTP numbers live.
+
+**How to reverse.** Delete `src/profile/`, drop the `GET_ALL_USER_DATA` branch in
+`IcgUartAdapter.autoRespond`, remove `getUserData` from `detect`/the adapter ctor, and unmount
+`ProfilePanel`. Everything downstream is untouched.
+
+---
+
+## 2026-07-12 — North star: **multiplayer spinning app** (was: single-user telemetry logger)
+
+**What.** The product vision shifts from a single-rider fit/telemetry logger to a
+**multiplayer spinning** app: riders join a **shared live session** via a **4-letter lobby
+code**; longer-term, gamification on top — e.g. **instant duels** when two riders ramp power at
+the same time.
+
+**Not now — deferred by explicit instruction.** Near-term work is unchanged: **finish the
+single-user core, local/offline.** No lobby / network / multiplayer code until the core is done.
+
+**Why it matters for the decisions below.** Multiplayer needs a **real-time relay/backend**,
+which directly conflicts with the standing *"zero network at runtime, no cloud, ever — by design"*
+stance in the stack decision. That offline-only rule now scopes to **the core / v1, not forever.**
+When multiplayer begins we revisit: relay transport (WebSocket vs WebRTC), lobby-code → session
+mapping, presence/sync, and whether offline single-user stays a first-class path.
+
+**How to reverse.** Vision-level, reversible by decision. The framework-agnostic core
+(`decode/` / `ble/` / `session/`) is unaffected either way — networking attaches *above* the
+store, never inside the decoders.
+
+---
+
 ## 2026-07-11 — Stack: Vite + React 19 + TypeScript (pnpm) — the PLAN §2 stack
 
 **What.** Vite 8 + React 19 + TypeScript 6 (strict, byte-safety flags on), Zustand for state,

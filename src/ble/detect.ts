@@ -6,6 +6,7 @@
  */
 
 import type { TrainerAdapter } from '../types'
+import type { IcgUserData } from '../decode/icgEncoder'
 import { ICG_SERVICE } from './constants'
 import { IcgUartAdapter } from './adapters/IcgUartAdapter'
 
@@ -15,16 +16,24 @@ export interface DetectResult {
   services: string[]
 }
 
+export interface DetectOptions {
+  /** Provider for the rider profile to answer GET_ALL_USER_DATA; returns null to stay silent. */
+  getUserData?: () => IcgUserData | null
+}
+
 export async function detect(
   server: BluetoothRemoteGATTServer,
   device: BluetoothDevice,
+  opts: DetectOptions = {},
 ): Promise<DetectResult> {
   const services = await server.getPrimaryServices()
   const uuids = services.map((s) => s.uuid)
   const has = (uuid: string | number): boolean => uuids.includes(BluetoothUUID.getService(uuid))
 
   // Priority: ICG-UART > (future) FTMS > (future) CPS.
-  if (has(ICG_SERVICE)) return { adapter: new IcgUartAdapter(server, device), services: uuids }
+  if (has(ICG_SERVICE)) {
+    return { adapter: new IcgUartAdapter(server, device, opts.getUserData), services: uuids }
+  }
 
   throw new Error('No supported trainer service found. Present: ' + uuids.join(', ') + '.')
 }

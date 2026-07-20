@@ -89,9 +89,34 @@ h3 {
   padding-top: 4px;
 }
 
+.app-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .app-title {
   font-size: clamp(1.05rem, 5vw, 1.5rem);
   letter-spacing: 0.2px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-btn {
+  flex: 0 1 auto;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Unset state: a gentle accent nudge to invite setup. */
+.profile-btn--cta {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
 }
 
 .app-main {
@@ -619,6 +644,191 @@ details[open] > .panel-summary::before {
 .field-v {
   color: var(--text);
   font-variant-numeric: tabular-nums;
+}
+
+/* ---- modal dialog ---- */
+
+.modal {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  margin: 0;
+  padding: 16px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  overflow: hidden;
+}
+
+.modal[open] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal::backdrop {
+  background: rgba(3, 6, 10, 0.62);
+}
+
+.modal-card {
+  width: min(460px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+@media (min-width: 600px) {
+  .modal-card {
+    max-height: min(88vh, 640px);
+  }
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.modal-title {
+  font-size: 1rem;
+}
+
+.modal-close {
+  font: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  color: var(--text);
+}
+
+/* ---- rider profile ---- */
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.profile-note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 10px;
+}
+
+.field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.field-row > span {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.field-unit {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.profile-name {
+  grid-column: 1 / -1;
+}
+
+.profile-form input:not([type='checkbox']) {
+  font: inherit;
+  width: 100%;
+  min-width: 0;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.profile-form input::placeholder {
+  color: var(--muted);
+}
+
+.profile-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.profile-check input {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.profile-flash {
+  font-size: 0.8rem;
+  color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ok) 40%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 6px 9px;
+  overflow-wrap: anywhere;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.profile-actions .btn {
+  width: 100%;
+}
+
+.profile-delete-link {
+  align-self: center;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  padding: 2px 6px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.profile-delete-link:hover {
+  color: var(--bad);
 }
 
 /* ---- session controls ---- */

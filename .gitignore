@@ -3,3 +3,5 @@ node_modules/
 *.log
 scratchpad/
 dist/
+# Exported session files (ride data, not source)
+bikefit-*.json

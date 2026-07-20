@@ -12,6 +12,7 @@ import { acquireWakeLock, releaseWakeLock } from '../ble/wakeLock'
 import { Recorder } from '../session/recorder'
 import { exportSession } from '../session/exporter'
 import { deleteSession, listSessions } from '../session/db'
+import { currentUserData } from '../profile/profile'
 import { useSessionStore } from '../store/useSessionStore'
 import { hexToBytes, bytesToHex } from '../util/hex'
 import { uuid } from '../util/time'
@@ -29,7 +30,7 @@ async function onReady(
   server: BluetoothRemoteGATTServer,
   device: BluetoothDevice,
 ): Promise<void> {
-  const { adapter: a, services } = await detect(server, device)
+  const { adapter: a, services } = await detect(server, device, { getUserData: currentUserData })
   adapter = a
   store().setDevice(a.deviceInfo(), a.protocol)
 
