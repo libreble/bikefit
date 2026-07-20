@@ -12,8 +12,16 @@ import { DemoAdapter } from '../demo/DemoAdapter'
 import { acquireWakeLock, releaseWakeLock } from '../ble/wakeLock'
 import { Recorder } from '../session/recorder'
 import { exportSession } from '../session/exporter'
-import { deleteSession, listSessions } from '../session/db'
+import {
+  deleteSession,
+  getSamples,
+  getSession,
+  listSessions,
+  type StoredSession,
+} from '../session/db'
+import { seedDemoSession as runSeedDemoSession } from '../demo/seed'
 import { currentUserData } from '../profile/profile'
+import type { SessionSample } from '../types'
 import { useSessionStore } from '../store/useSessionStore'
 import { uuid } from '../util/time'
 
@@ -159,7 +167,7 @@ export async function exportCurrentSession(): Promise<void> {
   await exportSession(sessionId)
 }
 
-export async function listPastSessions(): Promise<SessionMeta[]> {
+export async function listPastSessions(): Promise<StoredSession[]> {
   return listSessions()
 }
 
@@ -170,4 +178,22 @@ export async function exportPastSession(id: string): Promise<void> {
 export async function deletePastSession(id: string): Promise<void> {
   await deleteSession(id)
   if (id === sessionId) sessionId = null
+}
+
+/** Generate a finished demo ride into IndexedDB (to populate/exercise the history UI). */
+export async function seedDemoSession(minutes = 45): Promise<string> {
+  return runSeedDemoSession(minutes)
+}
+
+export interface SessionDetail {
+  session: StoredSession
+  samples: SessionSample[]
+}
+
+/** Load a past session's metadata + full sample series for review. */
+export async function loadSessionDetail(id: string): Promise<SessionDetail> {
+  const session = await getSession(id)
+  if (!session) throw new Error(`session ${id} not found`)
+  const samples = await getSamples(id)
+  return { session, samples }
 }

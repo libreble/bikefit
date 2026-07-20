@@ -79,6 +79,13 @@ export async function addSample(sample: StoredSample): Promise<void> {
   await db.put('samples', sample)
 }
 
+/** Bulk-write samples in one transaction (used to seed a whole demo ride at once). */
+export async function addSamples(rows: StoredSample[]): Promise<void> {
+  const db = await getDb()
+  const tx = db.transaction('samples', 'readwrite')
+  await Promise.all([...rows.map((r) => tx.store.put(r)), tx.done])
+}
+
 /** The session's decoded time series, in order. */
 export async function getSamples(sessionId: string): Promise<SessionSample[]> {
   const db = await getDb()
