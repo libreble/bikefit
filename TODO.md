@@ -8,31 +8,14 @@ priorities on top. Effort tags: **S** ≈ an hour, **M** ≈ a session, **L** �
 
 ## Top of queue (added 2026-07-21)
 
-### 1. Streamline data storage + gate the big debug store — **M**
-Two coupled problems in `src/session/recorder.ts`:
+### ~~1. Streamline data storage + gate the big debug store~~ — **DONE 2026-07-21**
+Went further than "gate": **removed** raw-frame capture entirely. IndexedDB v2 stores the decoded
+LIVE time series (`samples`) + one AGGREGATED totals snapshot on the session record; `frames`/
+`messages` stores dropped. Export is `SessionFile` v2. See DECISIONS.md (2026-07-21).
 
-- **Redundant aggregated logging.** The bike pushes a *full* AGGREGATED_STREAM (msg 13) totals
-  frame ~1×/s; we persist every one (`onRaw` → `addFrame`, `onMessage` → `addMessage`). An hour ride
-  = ~3600 near-identical totals rows. Keep only the **latest** aggregated totals on the session
-  record (or a low-rate sample), not the full repeated history. LIVE (msg 12) is the genuinely
-  changing stream and can stay per-frame.
-- **The lossless raw store should be opt-in.** Persisting every raw notification to IndexedDB is a
-  *debug/RE* feature (the re-parse safety net, PLAN §1). For a normal ride we only need: live UI +
-  the app-computed summary + (streamlined) totals. Only populate the full `frames`/`messages` stores
-  when **debug/logging is enabled** (couples to #2). Default off → tiny sessions; on → today's
-  lossless capture for protocol work.
-
-Notes: the app-computed summary (`Accumulator` in recorder.ts) is derived from LIVE samples and is
-independent of the bike's totals — that stays. See the storage explainer in this session / the
-`SessionMeta.summary` vs repeated msg-13 distinction. Watch the export path (`exporter.ts`) and
-`SessionFile` shape when raw frames may be absent.
-
-### 2. Debug panel: move under "Advanced" (or remove) — **S** — *decision first*
-Right now `DebugLog` is a top-level panel (`App.tsx`). Options: (a) tuck it behind an "Advanced"
-disclosure, off by default; (b) remove from the shipped UI entirely. **Recommend (a)** — it's
-invaluable for protocol work and the demo, just not for a normal rider. The "Advanced/debug on"
-toggle is the same switch that gates the raw store in #1. If enabling it mid-session, decide whether
-capture starts from that point or is all-or-nothing per session.
+### ~~2. Debug panel: move under "Advanced" (or remove)~~ — **DONE 2026-07-21 (removed)**
+Removed the Debug/Log panel + manual command sender + `onRaw` from the adapter contract and the
+dead CSS. Decision was **remove**, not hide.
 
 ### 3. UI: average watts + above/below-average arrow — **S**
 On the POWER hero tile (`LiveTiles.tsx`):
@@ -73,6 +56,5 @@ Today we export a self-contained JSON. To reach Strava / Golden Cheetah we need 
 ---
 
 ## Open decisions
-- **#2** Debug panel: hide under Advanced (recommended) or remove?
 - **#5** Does "seed" mean generating demo sessions into history? (assumed yes)
 - **#6** Strava: standards-based file export (recommended, stays offline) or API upload?

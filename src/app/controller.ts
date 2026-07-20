@@ -5,7 +5,7 @@
  * is one continuous session with a gap, not a new log.
  */
 
-import type { AdvertisementInfo, DecodedMessage, SampleSource, SessionMeta, TrainerAdapter } from '../types'
+import type { AdvertisementInfo, SessionMeta, TrainerAdapter } from '../types'
 import { BleConnection } from '../ble/BleConnection'
 import { detect } from '../ble/detect'
 import { DemoAdapter } from '../demo/DemoAdapter'
@@ -15,7 +15,6 @@ import { exportSession } from '../session/exporter'
 import { deleteSession, listSessions } from '../session/db'
 import { currentUserData } from '../profile/profile'
 import { useSessionStore } from '../store/useSessionStore'
-import { hexToBytes, bytesToHex } from '../util/hex'
 import { uuid } from '../util/time'
 
 let connection: BleConnection | null = null
@@ -48,7 +47,7 @@ async function onReady(
     sessionId = meta.id
     await recorder.init()
     await acquireWakeLock()
-    await logConnectContext(a.protocol, services)
+    await logConnectContext(services)
   }
 
   await a.start(recorder, recorder.now)
@@ -56,37 +55,19 @@ async function onReady(
 
 /**
  * Record what we learned at connect — advertised name/uuids (if captured) and the services
- * actually present — into the session context and the debug log. This is what lets us confirm,
- * after a real ride, whether a `{ services: [ICG_SERVICE] }` picker filter is safe to use.
+ * actually present — into the session context. This is what lets us confirm, after a real ride,
+ * whether a `{ services: [ICG_SERVICE] }` picker filter is safe to use (it rides along in the export).
  */
-async function logConnectContext(protocol: SampleSource, services: string[]): Promise<void> {
+async function logConnectContext(services: string[]): Promise<void> {
   const rec = recorder
   if (!rec) return
   const ctx: Record<string, string | number> = { presentServices: services.join(',') }
-  const messages: DecodedMessage[] = []
-
   if (pendingAd) {
     ctx.advertisedName = pendingAd.name ?? ''
     ctx.advertisedUuids = pendingAd.uuids.join(',')
     if (pendingAd.rssi !== undefined) ctx.rssi = pendingAd.rssi
-    messages.push({
-      t: 0,
-      src: protocol,
-      ok: true,
-      name: `ADV name=${pendingAd.name ?? '?'} uuids=[${pendingAd.uuids.join(' ') || 'none'}] rssi=${pendingAd.rssi ?? '?'}`,
-    })
-  } else {
-    messages.push({
-      t: 0,
-      src: protocol,
-      ok: true,
-      name: 'ADV not captured (watchAdvertisements unsupported — enable chrome://flags Experimental Web Platform features to see it)',
-    })
   }
-  messages.push({ t: 0, src: protocol, ok: true, name: `SERVICES present=[${services.join(' ')}]` })
-
   await rec.setContext(ctx)
-  for (const m of messages) store().pushMessage(m)
 }
 
 /** Prompt for a device and start a session. Must be called from a user gesture (button click). */
@@ -189,13 +170,4 @@ export async function exportPastSession(id: string): Promise<void> {
 export async function deletePastSession(id: string): Promise<void> {
   await deleteSession(id)
   if (id === sessionId) sessionId = null
-}
-
-/** Debug fallback: write a raw hex command to the device (e.g. to probe a stream trigger). */
-export async function sendManualCommandHex(hex: string): Promise<void> {
-  if (!adapter?.sendCommand) throw new Error('no device connected')
-  const bytes = hexToBytes(hex)
-  if (bytes.length === 0) throw new Error('empty command')
-  await adapter.sendCommand(bytes)
-  console.info('[controller] sent command', bytesToHex(bytes))
 }

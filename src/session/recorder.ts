@@ -1,19 +1,19 @@
 /**
- * Recorder — the sink an adapter pushes into. It (a) persists every raw notification to
- * IndexedDB losslessly, (b) mirrors decoded messages + normalized samples into the live store,
- * and (c) accumulates a summary. It owns the session clock so every timestamp shares one base.
+ * Recorder — the sink an adapter pushes into. It (a) persists the decoded LIVE time series to
+ * IndexedDB (~1 Hz), (b) mirrors samples into the live store for the dashboard, (c) keeps the
+ * bike's latest AGGREGATED totals snapshot (not the full 1 Hz repeat), and (d) accumulates our own
+ * summary. It owns the session clock so every timestamp shares one base.
  */
 
 import type {
   AdapterEvents,
   DecodedMessage,
   NormalizedSample,
-  SampleSource,
   SessionMeta,
   SessionSummary,
 } from '../types'
 import { useSessionStore } from '../store/useSessionStore'
-import { addFrame, addMessage, putSession } from './db'
+import { addSample, putSession, type StoredSession } from './db'
 
 class Accumulator {
   private sumP = 0
@@ -49,8 +49,8 @@ class Accumulator {
     if (s.energyKcal !== undefined) this.energyKcal = Math.max(this.energyKcal, s.energyKcal)
   }
 
-  summary(frames: number, durationS: number): SessionSummary {
-    const out: SessionSummary = { frames, durationS: Math.round(durationS) }
+  summary(samples: number, durationS: number): SessionSummary {
+    const out: SessionSummary = { samples, durationS: Math.round(durationS) }
     if (this.nP > 0) {
       out.avgPowerW = Math.round(this.sumP / this.nP)
       out.maxPowerW = this.maxP
@@ -71,16 +71,15 @@ class Accumulator {
 
 export class Recorder implements AdapterEvents {
   private seq = 0
-  private mseq = 0
   private lastT = 0
   private readonly startMs = performance.now()
-  private readonly src: SampleSource
   private readonly acc = new Accumulator()
   private readonly meta: SessionMeta
+  /** Latest AGGREGATED_STREAM totals from the bike — kept, not the full 1 Hz history. */
+  private aggregated: Record<string, number | number[]> | undefined
 
   constructor(meta: SessionMeta) {
     this.meta = meta
-    this.src = meta.protocol ?? 'icg'
   }
 
   /** ms since session start — passed to the adapter so all timestamps share this base. */
@@ -98,31 +97,37 @@ export class Recorder implements AdapterEvents {
     await putSession(this.meta)
   }
 
-  onRaw(hex: string): void {
-    const t = this.now()
-    this.lastT = t
-    void addFrame({ sessionId: this.meta.id, seq: this.seq++, t, src: this.src, hex }).catch((e) =>
-      console.error('[recorder] addFrame failed', e),
-    )
-    useSessionStore.getState().countRaw()
-  }
-
   onMessage(m: DecodedMessage): void {
-    useSessionStore.getState().pushMessage(m)
-    void addMessage({ ...m, sessionId: this.meta.id, seq: this.mseq++ }).catch((e) =>
-      console.error('[recorder] addMessage failed', e),
-    )
+    // Keep only the latest session-totals snapshot; the bike resends full totals ~1×/s.
+    if (m.aggregate && m.fields) this.aggregated = m.fields
   }
 
   onSample(s: NormalizedSample): void {
+    const t = s.t
+    this.lastT = t
     this.acc.add(s)
     useSessionStore.getState().pushSample(s)
+    void addSample({
+      sessionId: this.meta.id,
+      seq: this.seq++,
+      t,
+      powerW: s.powerW,
+      cadenceRpm: s.cadenceRpm,
+      bpm: s.bpm,
+      speedKmh: s.speedKmh,
+      resistance: s.resistance,
+      distanceKm: s.distanceKm,
+      energyKcal: s.energyKcal,
+      elapsedS: s.elapsedS,
+    }).catch((e) => console.error('[recorder] addSample failed', e))
   }
 
-  /** Persist end time + computed summary; leave the store's data in place for review/export. */
+  /** Persist end time + summary + the bike's final totals; leave store data in place for review. */
   async finalize(): Promise<void> {
     const summary = this.acc.summary(this.seq, this.lastT / 1000)
-    await putSession({ ...this.meta, endedAtWall: Date.now(), summary })
+    const stored: StoredSession = { ...this.meta, endedAtWall: Date.now(), summary }
+    if (this.aggregated) stored.aggregated = this.aggregated
+    await putSession(stored)
     useSessionStore.getState().stopSession()
   }
 }

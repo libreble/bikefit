@@ -2,6 +2,20 @@
 
 Running status so anyone (incl. future me) can pick this up. Newest first.
 
+## 2026-07-21 — Storage pivot: decoded time series, raw logger removed
+
+Retired the lossless raw-frame black box now that the decoder is proven. **IndexedDB v2**:
+`sessions` (meta + our summary + the bike's **latest** AGGREGATED totals snapshot) + `samples` (the
+decoded LIVE series, ~1 Hz). Gone: the `frames`/`messages` stores, the Debug/Log panel + manual
+command sender, `onRaw` from `AdapterEvents`, and ~2.4 kB of debug CSS. Export is `SessionFile`
+**v2** (meta + summary + aggregated + samples[]). The bike streams full totals ~1×/s; we keep one
+snapshot, not ~3600. Rationale + trade-off (lose re-parse-old-logs) in DECISIONS.md (2026-07-21).
+
+Verified in-browser via IndexedDB inspection: object stores are exactly `[samples, sessions]` (no
+frames/messages); a demo ride wrote clean per-second sample rows; on Disconnect the session got a
+computed `summary` **and** a single `aggregated` snapshot (both agree — avg 69 W / max 79); the
+`buildSessionFile` path returns a v2 file with no `frames`/`messages`. typecheck/lint/build green.
+
 ## 2026-07-20 — Demo mode (fake bike, no hardware)
 
 Added a **Demo** button next to Connect that streams a synthetic IC-6 ride so the UI can be worked

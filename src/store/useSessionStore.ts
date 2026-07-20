@@ -1,10 +1,8 @@
 import { create } from 'zustand'
-import type { DecodedMessage, DeviceInfo, NormalizedSample, SampleSource } from '../types'
+import type { DeviceInfo, NormalizedSample, SampleSource } from '../types'
 
 /** Points kept in memory for the live graphs (full-resolution data lives in IndexedDB). */
 const HISTORY_MAX = 1800
-/** Recent decoded messages kept for the debug panel. */
-const MESSAGES_MAX = 250
 
 export type ConnStatus =
   | 'idle'
@@ -35,12 +33,10 @@ interface SessionState {
   sessionId?: string
   recording: boolean
   startedAtWall?: number
-  frameCount: number
 
   // live
   latest: NormalizedSample
   history: HistoryPoint[]
-  messages: DecodedMessage[]
 
   // actions
   setStatus: (status: ConnStatus, error?: string) => void
@@ -48,8 +44,6 @@ interface SessionState {
   startSession: (sessionId: string, startedAtWall: number) => void
   stopSession: () => void
   pushSample: (s: NormalizedSample) => void
-  pushMessage: (m: DecodedMessage) => void
-  countRaw: () => void
   reset: () => void
 }
 
@@ -76,10 +70,8 @@ function mergeSample(prev: NormalizedSample, s: NormalizedSample): NormalizedSam
 export const useSessionStore = create<SessionState>()((set) => ({
   status: 'idle',
   recording: false,
-  frameCount: 0,
   latest: EMPTY_SAMPLE,
   history: [],
-  messages: [],
 
   setStatus: (status, error) => set(error === undefined ? { status } : { status, error }),
 
@@ -90,10 +82,8 @@ export const useSessionStore = create<SessionState>()((set) => ({
       sessionId,
       startedAtWall,
       recording: true,
-      frameCount: 0,
       latest: EMPTY_SAMPLE,
       history: [],
-      messages: [],
     }),
 
   stopSession: () => set({ recording: false }),
@@ -115,25 +105,12 @@ export const useSessionStore = create<SessionState>()((set) => ({
       return { latest, history }
     }),
 
-  pushMessage: (m) =>
-    set((state) => {
-      const messages =
-        state.messages.length >= MESSAGES_MAX
-          ? [...state.messages.slice(state.messages.length - MESSAGES_MAX + 1), m]
-          : [...state.messages, m]
-      return { messages }
-    }),
-
-  countRaw: () => set((state) => ({ frameCount: state.frameCount + 1 })),
-
   reset: () =>
     set({
       status: 'idle',
       recording: false,
-      frameCount: 0,
       latest: EMPTY_SAMPLE,
       history: [],
-      messages: [],
       sessionId: undefined,
       device: undefined,
       protocol: undefined,

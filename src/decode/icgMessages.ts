@@ -201,7 +201,9 @@ export function decodeIcgMessage(msgId: number, data: Uint8Array, tMs: number): 
     if (data.byteLength < ICG_AGG_LEN) {
       return { message: { t: tMs, src: 'icg', msgId, name, ok: false, leftover: bytesToHex(data) } }
     }
-    return { message: { t: tMs, src: 'icg', msgId, name, fields: decodeIcgAggregated(data), ok: true } }
+    return {
+      message: { t: tMs, src: 'icg', msgId, name, fields: decodeIcgAggregated(data), aggregate: true, ok: true },
+    }
   }
 
   // Known-but-undecoded (firmware, serial, training mode, …): keep the raw bytes visible.

@@ -31,18 +31,22 @@ export interface NormalizedSample {
 }
 
 /**
- * Lossless record of one BLE notification exactly as it arrived — the re-parse safety net.
- * Even if our decode is wrong, the raw bytes are preserved so old logs can be re-parsed.
- * This is the core of the debug "logging" feature.
+ * One decoded point in the persisted session time series (the ~1 Hz LIVE stream). This — not raw
+ * bytes — is what a session stores now: the genuinely-changing metrics, enough to redraw the graphs
+ * and review a past ride. Raw-frame capture was dropped once the decoder was proven (DECISIONS.md).
  */
-export interface RawFrame {
-  /** Monotonic sequence within the session. */
-  seq: number
-  /** ms since session start. */
+export interface SessionSample {
+  /** ms since session start (monotonic). */
   t: number
-  src: SampleSource
-  /** Full characteristic value as lowercase hex, no separators. */
-  hex: string
+  powerW?: number
+  cadenceRpm?: number
+  bpm?: number
+  speedKmh?: number
+  /** ICG brakeLevel / FTMS resistance level. */
+  resistance?: number
+  distanceKm?: number
+  energyKcal?: number
+  elapsedS?: number
 }
 
 /**
@@ -61,6 +65,8 @@ export interface DecodedMessage {
   fields?: Record<string, number | number[]>
   /** Hex of bytes we could not account for — non-empty means our field model is wrong. */
   leftover?: string
+  /** True for a session-totals message (ICG AGGREGATED_STREAM); the recorder keeps the latest. */
+  aggregate?: boolean
   /** Frame/checksum validity. */
   ok: boolean
 }
@@ -106,7 +112,8 @@ export interface SessionMeta {
 }
 
 export interface SessionSummary {
-  frames: number
+  /** Number of stored time-series points (~1 Hz). */
+  samples: number
   durationS: number
   avgPowerW?: number
   maxPowerW?: number
@@ -118,22 +125,26 @@ export interface SessionSummary {
   energyKcal?: number
 }
 
-/** Self-contained, analysis-friendly export: metadata + every raw frame + decoded + summary. */
+/**
+ * Self-contained, analysis-friendly export: metadata + the decoded LIVE time series + the bike's
+ * final aggregated totals + our summary — one JSON document, loadable in jq/pandas/JS without the
+ * app. v2 dropped the raw-frame/message logs once the decoder was proven (DECISIONS.md).
+ */
 export interface SessionFile {
-  version: 1
+  version: 2
   session: SessionMeta
-  frames: RawFrame[]
-  messages: DecodedMessage[]
   summary: SessionSummary
+  /** The bike's own final AGGREGATED_STREAM totals (IF/TSS/time-in-zone/…), latest snapshot only. */
+  aggregated?: Record<string, number | number[]>
+  /** Decoded LIVE time series (~1 Hz). */
+  samples: SessionSample[]
 }
 
-/** Sink an adapter pushes into. The recorder implements this (persist raw, update store). */
+/** Sink an adapter pushes into. The recorder implements this (persist the time series, update store). */
 export interface AdapterEvents {
-  /** Every raw notification, hex. Lossless — persisted verbatim. */
-  onRaw: (hex: string) => void
-  /** Each decoded message (for live debug + summary). */
+  /** Each decoded message. The recorder keeps the latest `aggregate` one; the rest are transient. */
   onMessage: (m: DecodedMessage) => void
-  /** Each normalized sample (for live dashboard). */
+  /** Each normalized sample — drives the live dashboard and the persisted time series. */
   onSample: (s: NormalizedSample) => void
 }
 

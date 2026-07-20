@@ -9,7 +9,6 @@
 
 import type { AdapterEvents, Clock, DeviceInfo, TrainerAdapter } from '../types'
 import { ICG_MSG, decodeIcgMessage } from '../decode/icgMessages'
-import { encodeIcgFrame } from '../decode/icgEncoder'
 import { bytesToHex } from '../util/hex'
 import { loadProfile } from '../profile/profile'
 import { DemoRide } from './ride'
@@ -62,9 +61,8 @@ export class DemoAdapter implements TrainerAdapter {
     this.emitFrame(events, ICG_MSG.AGGREGATED_STREAM, encodeAggPayload(agg), t)
   }
 
-  /** Mirror IcgUartAdapter's notify→frame path: log the raw framed bytes, then decode + emit. */
+  /** Mirror IcgUartAdapter's frame path: decode the payload, then emit message + sample. */
   private emitFrame(events: AdapterEvents, msgId: number, payload: Uint8Array, t: number): void {
-    events.onRaw(bytesToHex(encodeIcgFrame(msgId, payload)))
     const { message, sample } = decodeIcgMessage(msgId, payload, t)
     events.onMessage(message)
     if (sample) events.onSample(sample)

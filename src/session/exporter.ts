@@ -1,11 +1,11 @@
 /**
- * Build and save a self-contained `SessionFile` (metadata + every raw frame + decoded messages
- * + summary) as one JSON document — loadable later in jq/pandas/JS without the app. Saving is a
- * plain anchor download (reliable on mobile Chrome, our gym target); no network.
+ * Build and save a self-contained `SessionFile` (metadata + the decoded LIVE time series + the
+ * bike's final aggregated totals + summary) as one JSON document — loadable later in jq/pandas/JS
+ * without the app. Saving is a plain anchor download (reliable on mobile Chrome, our gym target).
  */
 
 import type { SessionFile, SessionSummary } from '../types'
-import { getFrames, getMessages, getSession } from './db'
+import { getSamples, getSession } from './db'
 
 function isoStamp(ms: number): string {
   // Filesystem-safe ISO: 2026-07-11T21-30-05
@@ -16,16 +16,18 @@ export async function buildSessionFile(sessionId: string): Promise<SessionFile> 
   const session = await getSession(sessionId)
   if (!session) throw new Error(`session ${sessionId} not found`)
 
-  const [frames, messages] = await Promise.all([getFrames(sessionId), getMessages(sessionId)])
+  const samples = await getSamples(sessionId)
 
-  const lastT = frames.length > 0 ? (frames[frames.length - 1]?.t ?? 0) : 0
+  const lastT = samples.length > 0 ? (samples[samples.length - 1]?.t ?? 0) : 0
   const summary: SessionSummary = session.summary ?? {
-    frames: frames.length,
+    samples: samples.length,
     durationS: Math.round(lastT / 1000),
   }
 
-  const { summary: _omit, ...meta } = session
-  return { version: 1, session: meta, frames, messages, summary }
+  const { summary: _s, aggregated, ...meta } = session
+  const file: SessionFile = { version: 2, session: meta, summary, samples }
+  if (aggregated) file.aggregated = aggregated
+  return file
 }
 
 function download(filename: string, text: string): void {

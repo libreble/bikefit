@@ -4,6 +4,32 @@ Newest first. Each entry: **what**, **why**, and **how to reverse** if we change
 
 ---
 
+## 2026-07-21 — Storage pivot: store the decoded time series, drop raw-frame capture
+
+**What.** Retired the lossless raw-frame black box. IndexedDB (v2) now holds **`sessions`** (meta +
+our summary + the bike's final AGGREGATED totals snapshot) and **`samples`** (the decoded LIVE
+time series, ~1 Hz) — the `frames` (raw hex) and `messages` stores are gone, and so is the whole
+Debug/Log panel + manual command sender. `AdapterEvents` lost `onRaw`. The bike's AGGREGATED_STREAM
+totals (IF/TSS/time-in-zone) are kept as **one latest snapshot** on the session record, not the
+~3600 identical copies it streams over an hour. Export is now `SessionFile` **v2** (meta + summary +
+aggregated + samples[], no frames/messages).
+
+**Why.** The raw capture existed as a re-parse safety net for *unverified* decoders (PLAN §1 called
+it "the single most important decision in round 1"). That premise is spent: the decoder is
+oracle-verified byte-exact vs the ICG app **and** field-proven over a real gym ride (PROGRESS
+2026-07-12). Keeping raw hex + every decoded message + 3600 repeated totals was pure duplication of
+data we can already trust. Storing the decoded series is smaller, is what history/graphs/replay
+actually need, and drops a debug surface no rider wants.
+
+**Trade-off.** We lose the ability to *re-parse old logs* if a decode bug surfaces later — an old
+session is now only as correct as the decoder was at capture time. Accepted because the decoder is
+proven; if we ever touch the byte layouts again, re-enable raw capture first.
+
+**How to reverse.** Re-add the `frames` store + `onRaw` to `AdapterEvents`/recorder/adapters, bump
+the DB version, and restore `DebugLog`. Git history (this commit) has the deleted code intact.
+
+---
+
 ## 2026-07-12 — FTP/user-data handshake: opt-in local profile, no live recompute
 
 **What.** Added a rider **profile** (FTP, weight, maxHR, age, name, Coach-By-Color toggle) stored

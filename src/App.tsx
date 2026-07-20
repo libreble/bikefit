@@ -1,15 +1,14 @@
 /**
  * Screen composition: header (title + profile button + connection bar), the live tiles as the main
- * focus, trends below, then a collapsible debug section and the session controls in the footer.
- * Mobile-first single column that widens to a two-column grid on larger screens (see index.css).
- * The rider profile is a modal popup (ProfileDialog), off the main page — better on a phone.
+ * focus, trends below, and the session controls alongside. Mobile-first single column that widens
+ * to a two-column grid on larger screens (see index.css). The rider profile is a modal popup
+ * (ProfileDialog), off the main page — better on a phone.
  */
 import './index.css'
 import { useState } from 'react'
 import { ConnectionBar } from './ui/ConnectionBar'
 import { LiveTiles } from './ui/LiveTiles'
 import { Graphs } from './ui/Graphs'
-import { DebugLog } from './ui/DebugLog'
 import { ProfileDialog } from './ui/ProfileDialog'
 import { SessionControls } from './ui/SessionControls'
 import { loadProfile, profileLabel, type UserProfile } from './profile/profile'
@@ -41,11 +40,6 @@ export function App() {
         </div>
 
         <div className="col-side">
-          <details className="panel debug-panel" open>
-            <summary className="panel-summary">Debug / Log</summary>
-            <DebugLog />
-          </details>
-
           <div className="panel">
             <SessionControls />
           </div>

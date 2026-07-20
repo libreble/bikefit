@@ -13,7 +13,6 @@ import { ICG_RX_CHAR, ICG_SERVICE, ICG_TX_CHAR } from '../constants'
 import { IcgFramer, type IcgFrame } from '../../decode/icgFramer'
 import { decodeIcgMessage, ICG_MSG } from '../../decode/icgMessages'
 import { encodeIcgFrame, encodeIcgAllUserData, type IcgUserData } from '../../decode/icgEncoder'
-import { bytesToHex } from '../../util/hex'
 
 export class IcgUartAdapter implements TrainerAdapter {
   readonly protocol = 'icg'
@@ -81,7 +80,6 @@ export class IcgUartAdapter implements TrainerAdapter {
     const value = char.value
     if (!value || !this.events || !this.framer) return
     const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength)
-    this.events.onRaw(bytesToHex(bytes))
     this.framer.push(bytes)
   }
 

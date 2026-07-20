@@ -1,35 +1,44 @@
 /**
- * IndexedDB persistence — the crash-safe black box. Every raw notification is written here as
- * it arrives, so a session survives a reload/crash and can be re-parsed later even if our
- * decode was wrong. Thin wrapper over `idb`; no business logic.
+ * IndexedDB persistence — the crash-safe black box. As a session runs we write the decoded LIVE
+ * time series here (~1 Hz), so a ride survives a reload/crash and can be reviewed later. Thin
+ * wrapper over `idb`; no business logic. (v2 dropped the raw-frame/message logs — see DECISIONS.md.)
  */
 
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { DecodedMessage, RawFrame, SessionMeta, SessionSummary } from '../types'
+import type { SessionMeta, SessionSample, SessionSummary } from '../types'
 
-export type StoredSession = SessionMeta & { summary?: SessionSummary }
-export type StoredFrame = RawFrame & { sessionId: string }
-export type StoredMessage = DecodedMessage & { sessionId: string; seq: number }
+export type StoredSession = SessionMeta & {
+  summary?: SessionSummary
+  /** The bike's final AGGREGATED_STREAM totals (IF/TSS/time-in-zone/…), latest snapshot only. */
+  aggregated?: Record<string, number | number[]>
+}
+export type StoredSample = SessionSample & { sessionId: string; seq: number }
 
 interface BikefitDB extends DBSchema {
   sessions: { key: string; value: StoredSession }
-  frames: { key: [string, number]; value: StoredFrame; indexes: { bySession: string } }
-  messages: { key: [string, number]; value: StoredMessage; indexes: { bySession: string } }
+  samples: { key: [string, number]; value: StoredSample; indexes: { bySession: string } }
 }
 
 const DB_NAME = 'bikefit'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 let dbPromise: Promise<IDBPDatabase<BikefitDB>> | null = null
 
 function getDb(): Promise<IDBPDatabase<BikefitDB>> {
   dbPromise ??= openDB<BikefitDB>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      db.createObjectStore('sessions', { keyPath: 'id' })
-      const frames = db.createObjectStore('frames', { keyPath: ['sessionId', 'seq'] })
-      frames.createIndex('bySession', 'sessionId')
-      const messages = db.createObjectStore('messages', { keyPath: ['sessionId', 'seq'] })
-      messages.createIndex('bySession', 'sessionId')
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        db.createObjectStore('sessions', { keyPath: 'id' })
+      }
+      if (oldVersion < 2) {
+        // Drop the v1 raw-frame/message logs; add the decoded time series.
+        const legacy = db as unknown as IDBPDatabase
+        for (const name of ['frames', 'messages']) {
+          if (legacy.objectStoreNames.contains(name)) legacy.deleteObjectStore(name)
+        }
+        const samples = db.createObjectStore('samples', { keyPath: ['sessionId', 'seq'] })
+        samples.createIndex('bySession', 'sessionId')
+      }
     },
   })
   return dbPromise
@@ -54,40 +63,27 @@ export async function listSessions(): Promise<StoredSession[]> {
 
 export async function deleteSession(id: string): Promise<void> {
   const db = await getDb()
-  const tx = db.transaction(['sessions', 'frames', 'messages'], 'readwrite')
+  const tx = db.transaction(['sessions', 'samples'], 'readwrite')
   await tx.objectStore('sessions').delete(id)
-  for (const store of ['frames', 'messages'] as const) {
-    const idx = tx.objectStore(store).index('bySession')
-    let cursor = await idx.openCursor(id)
-    while (cursor) {
-      await cursor.delete()
-      cursor = await cursor.continue()
-    }
+  const idx = tx.objectStore('samples').index('bySession')
+  let cursor = await idx.openCursor(id)
+  while (cursor) {
+    await cursor.delete()
+    cursor = await cursor.continue()
   }
   await tx.done
 }
 
-export async function addFrame(frame: StoredFrame): Promise<void> {
+export async function addSample(sample: StoredSample): Promise<void> {
   const db = await getDb()
-  await db.put('frames', frame)
+  await db.put('samples', sample)
 }
 
-export async function getFrames(sessionId: string): Promise<RawFrame[]> {
+/** The session's decoded time series, in order. */
+export async function getSamples(sessionId: string): Promise<SessionSample[]> {
   const db = await getDb()
-  const rows = await db.getAllFromIndex('frames', 'bySession', sessionId)
+  const rows = await db.getAllFromIndex('samples', 'bySession', sessionId)
   rows.sort((a, b) => a.seq - b.seq)
-  return rows.map(({ seq, t, src, hex }) => ({ seq, t, src, hex }))
-}
-
-export async function addMessage(message: StoredMessage): Promise<void> {
-  const db = await getDb()
-  await db.put('messages', message)
-}
-
-export async function getMessages(sessionId: string): Promise<DecodedMessage[]> {
-  const db = await getDb()
-  const rows = await db.getAllFromIndex('messages', 'bySession', sessionId)
-  rows.sort((a, b) => a.seq - b.seq)
-  // Strip storage-only keys back to the DecodedMessage shape.
-  return rows.map(({ sessionId: _sid, seq: _seq, ...msg }) => msg)
+  // Strip storage-only keys back to the SessionSample shape.
+  return rows.map(({ sessionId: _sid, seq: _seq, ...s }) => s)
 }
