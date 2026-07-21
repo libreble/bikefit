@@ -6,9 +6,6 @@
  *
  * - `demo` — the testing-only affordances: the "Demo" fake-ride button (ConnectionBar) and the
  *   "Add demo session" seeder (HistoryPage).
- * - `cbc` — Coach-By-Color live zones on the power tile. Gated off by default until the bike's zone
- *   indexing (0- vs 1-based) is confirmed against a real CBC-on ride; the demo uses 1..5, so it
- *   renders under `?cbc=1` today. See `src/cbc/zones.ts`.
  */
 
 /** Read a `?<name>=1` query flag, false on any parse failure. Fixed for the page's lifetime. */
@@ -22,6 +19,3 @@ function urlFlag(name: string): boolean {
 
 /** True when the page was loaded with `?demo=1`. */
 export const demoEnabled: boolean = urlFlag('demo')
-
-/** True when the page was loaded with `?cbc=1` — gates the power-tile Coach-By-Color zones. */
-export const cbcEnabled: boolean = urlFlag('cbc')
