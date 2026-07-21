@@ -42,7 +42,9 @@ export function ProfilePanel({ onClose, onChanged }: Props) {
   // Max HR seeds from a saved value, else a 220 − age estimate. `maxHrTouched` locks it: once the
   // rider types their own (or a saved value already exists), age no longer overwrites the field.
   const [maxHr, setMaxHr] = useState(() =>
-    str(saved?.maxHr ?? (saved?.ageYears !== undefined ? estimateMaxHr(saved.ageYears) : undefined)),
+    str(
+      saved?.maxHr ?? (saved?.ageYears !== undefined ? estimateMaxHr(saved.ageYears) : undefined),
+    ),
   )
   const [maxHrTouched, setMaxHrTouched] = useState(() => saved?.maxHr !== undefined)
   const [name, setName] = useState(() => saved?.name ?? '')
@@ -76,6 +78,8 @@ export function ProfilePanel({ onClose, onChanged }: Props) {
     const nm = name.trim()
     if (nm) p.name = nm
     saveProfile(p)
+    setSaved(p)
+    setFlash(t('common.saved'))
     onChanged?.()
     onClose?.()
   }

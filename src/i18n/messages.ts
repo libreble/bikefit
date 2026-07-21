@@ -10,10 +10,10 @@
 
 export type Locale = 'en' | 'nl'
 
-/** Locales in menu order, with the label shown in the switcher (each in its own language). */
-export const LOCALES: { code: Locale; label: string }[] = [
-  { code: 'en', label: 'English' },
-  { code: 'nl', label: 'Nederlands' },
+/** Locales in menu order, with the label (each in its own language) and flag for the switcher. */
+export const LOCALES: { code: Locale; label: string; flag: string }[] = [
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'nl', label: 'Nederlands', flag: '🇳🇱' },
 ]
 
 const en = {
@@ -22,13 +22,14 @@ const en = {
   'common.close': 'Close',
   'common.delete': 'Delete',
   'common.loading': 'Loading…',
+  'common.saved': 'Saved',
 
   // App shell + nav.
   'app.title': 'Bikefit — ICG IC-6',
-  'header.customize': 'Customize',
   'nav.label': 'Sections',
   'nav.live': 'Live',
   'nav.history': 'History',
+  'nav.settings': 'Settings',
   'lang.label': 'Language',
 
   // Connection bar.
@@ -120,8 +121,6 @@ const en = {
 
   // Rider-profile dialog + form.
   'profile.title': 'Rider profile',
-  'profile.cta': 'Set your profile',
-  'profile.fallback': 'Profile',
   'profile.note':
     "Optional, stored only on this device. When set it's sent to the bike so it can show your FTP zones (Coach-By-Color) and W/kg. Leave blank to keep the bike's own defaults.",
   'profile.ftp': 'FTP',
@@ -170,12 +169,13 @@ const nl: Record<MessageKey, string> = {
   'common.close': 'Sluiten',
   'common.delete': 'Verwijderen',
   'common.loading': 'Laden…',
+  'common.saved': 'Opgeslagen',
 
   'app.title': 'Bikefit — ICG IC-6',
-  'header.customize': 'Aanpassen',
   'nav.label': 'Secties',
   'nav.live': 'Live',
   'nav.history': 'Geschiedenis',
+  'nav.settings': 'Instellingen',
   'lang.label': 'Taal',
 
   'conn.connect': 'Verbinden',
@@ -255,8 +255,6 @@ const nl: Record<MessageKey, string> = {
   'dash.reset': 'Standaard herstellen',
 
   'profile.title': 'Fietsersprofiel',
-  'profile.cta': 'Stel je profiel in',
-  'profile.fallback': 'Profiel',
   'profile.note':
     'Optioneel, alleen op dit apparaat opgeslagen. Indien ingesteld wordt het naar de fiets gestuurd zodat die je FTP-zones (Coach-By-Color) en W/kg kan tonen. Laat leeg om de standaardwaarden van de fiets te behouden.',
   'profile.ftp': 'FTP',

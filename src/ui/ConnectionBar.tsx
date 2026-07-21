@@ -53,12 +53,15 @@ export function ConnectionBar() {
 
   const buttonLabel = connected ? t('conn.disconnect') : busy ? t('conn.cancel') : t('conn.connect')
   const deviceName = device?.name ?? t('conn.noDevice')
+  const statusText = t(STATUS_LABEL[status])
 
   return (
     <div className="connbar">
+      {/* Connect is the primary CTA (accent); once connected, Disconnect steps back to a quiet
+          ghost that only turns danger-red on hover — it shouldn't shout during a ride. */}
       <button
         type="button"
-        className={`btn conn-btn ${connected ? 'btn-danger' : 'btn-accent'}`}
+        className={`btn conn-btn ${connected ? 'btn-ghost conn-disconnect' : 'btn-accent'}`}
         onClick={onClick}
         disabled={pending}
       >
@@ -77,9 +80,18 @@ export function ConnectionBar() {
         </button>
       )}
 
+      {/* When connected, the green dot + device name say it all, so the "Connected" word is dropped
+          (the dot carries the accessible name instead). Other states keep the label — "Connecting…",
+          "Error" etc. need the words. */}
       <div className="conn-state">
-        <span className={`status-dot status-${status}`} aria-hidden="true" />
-        <span className="status-label">{t(STATUS_LABEL[status])}</span>
+        {connected ? (
+          <span className={`status-dot status-${status}`} role="img" aria-label={statusText} />
+        ) : (
+          <>
+            <span className={`status-dot status-${status}`} aria-hidden="true" />
+            <span className="status-label">{statusText}</span>
+          </>
+        )}
       </div>
 
       <div className="conn-device">

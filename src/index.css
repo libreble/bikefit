@@ -118,20 +118,6 @@ h3 {
   white-space: nowrap;
 }
 
-.profile-btn {
-  flex: 0 1 auto;
-  max-width: 55%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Unset state: a gentle accent nudge to invite setup. */
-.profile-btn--cta {
-  color: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-}
-
 .app-main {
   display: grid;
   grid-template-columns: 1fr;
@@ -218,6 +204,17 @@ h3 {
 
 .conn-btn {
   flex: 0 0 auto;
+}
+
+/* Disconnect: quiet by default (muted ghost), reveals its destructive nature only on hover. */
+.conn-disconnect {
+  color: var(--muted);
+}
+
+.conn-disconnect:hover:not(:disabled) {
+  color: var(--bad);
+  border-color: color-mix(in srgb, var(--bad) 55%, var(--border));
+  filter: none;
 }
 
 .conn-state {
@@ -347,6 +344,15 @@ h3 {
   min-width: 0;
 }
 
+/* Unit + optional HR zone badge, kept together so they sit on one line beside (desktop) or
+   beneath (phone) the number. */
+.tile-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
 .tile-number {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -424,6 +430,27 @@ h3 {
   background: color-mix(in srgb, var(--zone-color) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--zone-color) 45%, transparent);
   white-space: nowrap;
+}
+
+/* Phone: pin the metric grid to column counts that divide the default set (3 primary + 4 small)
+   evenly, so a lone tile never orphans onto a half-empty row. auto-fit takes over above this. */
+@media (max-width: 560px) {
+  .tile-row-primary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .tile-row-small {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Three-up primary tiles are too narrow for a big number + unit side by side, so drop the
+     unit (and its HR zone badge) beneath the number instead of overflowing. Because the badge
+     rides the unit line — not the label row — every tile keeps the same number position, so a
+     badged tile (HR) stays aligned with the plain ones beside it. */
+  .tile-primary .tile-value {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
 }
 
 /* ---- graphs ---- */
@@ -743,73 +770,48 @@ h3 {
 
 /* ---- header actions ---- */
 
-.app-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* Header language switcher — one small flag button per locale, active one lit, the rest dimmed
+   to grayscale. Compact enough to sit beside the title on a phone. */
+.lang-switch {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 4px;
 }
 
-/* Header language picker — a native <select> dressed as a pill: globe on the left, chevron on the
-   right, native arrow removed. The wrapper draws the border/background; the select is transparent. */
-.lang-picker {
-  position: relative;
-  flex: 0 0 auto;
+.lang-flag {
   display: inline-flex;
   align-items: center;
-  background: var(--panel-2);
-  border: 1px solid var(--border);
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 4px 6px;
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
+  cursor: pointer;
+  opacity: 0.4;
+  filter: grayscale(0.7);
   transition:
-    border-color 0.12s ease,
+    opacity 0.12s ease,
     filter 0.12s ease;
 }
 
-.lang-picker:hover {
-  filter: brightness(1.12);
+.lang-flag:hover {
+  opacity: 0.85;
+  filter: grayscale(0.2);
 }
 
-.lang-picker:focus-within {
+.lang-flag--active {
+  opacity: 1;
+  filter: none;
+  background: var(--panel-2);
+  border-color: var(--border);
+  cursor: default;
+}
+
+.lang-flag:focus-visible {
+  outline: none;
   border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
-}
-
-.lang-picker__globe,
-.lang-picker__caret {
-  position: absolute;
-  pointer-events: none; /* clicks fall through to the select */
-  color: var(--muted);
-}
-
-.lang-picker__globe {
-  left: 10px;
-}
-
-.lang-picker__caret {
-  right: 9px;
-}
-
-/* The real control: transparent, native arrow removed, padded to clear the two icons. */
-.lang-picker__select {
-  appearance: none;
-  -webkit-appearance: none;
-  font: inherit;
-  font-weight: 600;
-  color: var(--text);
-  background: transparent;
-  border: 0;
-  border-radius: inherit;
-  padding: 9px 32px 9px 32px;
-  cursor: pointer;
-}
-
-.lang-picker__select:focus {
-  outline: none; /* the wrapper's :focus-within ring stands in */
-}
-
-/* Native option list is OS-drawn; give it readable colors where the platform honors them. */
-.lang-picker__select option {
-  color: var(--text);
-  background: var(--panel);
 }
 
 /* ---- hero tile average + trend ---- */
@@ -1070,6 +1072,7 @@ h3 {
 
 .app-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
@@ -1112,6 +1115,17 @@ h3 {
 
 .page-title {
   font-size: clamp(1.1rem, 4vw, 1.5rem);
+}
+
+/* Settings page: each config group is a panel with a small heading. */
+.settings-section {
+  padding: 14px;
+}
+
+.settings-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 12px;
 }
 
 .page-actions {

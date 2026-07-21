@@ -40,19 +40,23 @@ function Tile({ label, value, unit, accent, variant, sub, badge }: TileProps) {
     >
       <div className="tile-head">
         <span className="tile-label">{label}</span>
-        {badge !== undefined && (
-          <span
-            className="tile-zone"
-            style={{ '--zone-color': badge.color } as CSSProperties}
-            aria-label={badge.ariaLabel}
-          >
-            {badge.text}
-          </span>
-        )}
       </div>
       <div className="tile-value">
         <span className="tile-number">{value}</span>
-        {unit !== undefined && <span className="tile-unit">{unit}</span>}
+        {(unit !== undefined || badge !== undefined) && (
+          <span className="tile-meta">
+            {unit !== undefined && <span className="tile-unit">{unit}</span>}
+            {badge !== undefined && (
+              <span
+                className="tile-zone"
+                style={{ '--zone-color': badge.color } as CSSProperties}
+                aria-label={badge.ariaLabel}
+              >
+                {badge.text}
+              </span>
+            )}
+          </span>
+        )}
       </div>
       {sub !== undefined && <div className="tile-sub">{sub}</div>}
     </div>
