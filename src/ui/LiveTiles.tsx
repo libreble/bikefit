@@ -9,10 +9,18 @@ import { useSessionStore } from '../store/useSessionStore'
 import type { LiveAverages } from '../store/useSessionStore'
 import type { NormalizedSample } from '../types'
 import { METRICS, visibleMetrics, type DashboardPrefs, type MetricKey } from '../prefs/dashboard'
+import { HR_ZONES, hrZoneIndex } from '../hr/zones'
 import { formatDuration } from '../util/time'
 import { useT, type TFunc } from '../i18n/i18n'
 
 type Variant = 'hero' | 'primary' | 'small'
+
+/** A coloured "Z3" chip pinned to a tile's label row (HR only, when a zone is known). */
+interface ZoneBadge {
+  text: string
+  color: string
+  ariaLabel: string
+}
 
 interface TileProps {
   label: string
@@ -21,15 +29,27 @@ interface TileProps {
   accent?: string
   variant: Variant
   sub?: ReactNode
+  badge?: ZoneBadge
 }
 
-function Tile({ label, value, unit, accent, variant, sub }: TileProps) {
+function Tile({ label, value, unit, accent, variant, sub, badge }: TileProps) {
   return (
     <div
       className={`tile tile-${variant}`}
       style={accent !== undefined ? ({ '--tile-accent': accent } as CSSProperties) : undefined}
     >
-      <div className="tile-label">{label}</div>
+      <div className="tile-head">
+        <span className="tile-label">{label}</span>
+        {badge !== undefined && (
+          <span
+            className="tile-zone"
+            style={{ '--zone-color': badge.color } as CSSProperties}
+            aria-label={badge.ariaLabel}
+          >
+            {badge.text}
+          </span>
+        )}
+      </div>
       <div className="tile-value">
         <span className="tile-number">{value}</span>
         {unit !== undefined && <span className="tile-unit">{unit}</span>}
@@ -37,6 +57,24 @@ function Tile({ label, value, unit, accent, variant, sub }: TileProps) {
       {sub !== undefined && <div className="tile-sub">{sub}</div>}
     </div>
   )
+}
+
+/** For the HR tile only: the current zone's colour (to tint the tile) and its "Zx" badge. `null`
+ * for every other metric, or when HR/HRmax is unknown so nothing zone-related should show. */
+function hrZone(
+  key: MetricKey,
+  latest: NormalizedSample,
+  maxHr: number | undefined,
+  t: TFunc,
+): { color: string; badge: ZoneBadge } | null {
+  if (key !== 'hr') return null
+  const zi = hrZoneIndex(latest.bpm, maxHr)
+  if (zi === null) return null
+  const z = HR_ZONES[zi]!
+  return {
+    color: z.colorVar,
+    badge: { text: `Z${z.z}`, color: z.colorVar, ariaLabel: t('hrzone.badgeAria', { z: z.z }) },
+  }
 }
 
 /** Above/below-average arrow with a small deadband so it doesn't flicker around the mean. */
@@ -98,7 +136,7 @@ function fmt(key: MetricKey, v: number | undefined): string {
   return v.toFixed(METRICS[key].digits)
 }
 
-export function LiveTiles({ prefs }: { prefs: DashboardPrefs }) {
+export function LiveTiles({ prefs, maxHr }: { prefs: DashboardPrefs; maxHr?: number }) {
   const t = useT()
   const latest = useSessionStore((s) => s.latest)
   const avg = useSessionStore((s) => s.avg)
@@ -112,6 +150,7 @@ export function LiveTiles({ prefs }: { prefs: DashboardPrefs }) {
   const heroMeta = METRICS[heroKey]
   const heroValue = valueOf(heroKey, latest)
   const heroAvg = avgOf(heroKey, avg)
+  const heroZone = hrZone(heroKey, latest, maxHr, t)
   const heroSub =
     heroAvg !== undefined ? (
       <>
@@ -129,37 +168,47 @@ export function LiveTiles({ prefs }: { prefs: DashboardPrefs }) {
         label={t(heroMeta.labelKey)}
         value={fmt(heroKey, heroValue)}
         unit={heroMeta.unit}
-        accent={heroMeta.accent ?? 'var(--accent)'}
+        accent={heroZone?.color ?? heroMeta.accent ?? 'var(--accent)'}
         variant="hero"
         sub={heroSub}
+        badge={heroZone?.badge}
       />
 
       {primary.length > 0 && (
         <div className="tile-row tile-row-primary">
-          {primary.map((key) => (
-            <Tile
-              key={key}
-              label={t(METRICS[key].labelKey)}
-              value={fmt(key, valueOf(key, latest))}
-              unit={METRICS[key].unit}
-              accent={METRICS[key].accent}
-              variant="primary"
-            />
-          ))}
+          {primary.map((key) => {
+            const zone = hrZone(key, latest, maxHr, t)
+            return (
+              <Tile
+                key={key}
+                label={t(METRICS[key].labelKey)}
+                value={fmt(key, valueOf(key, latest))}
+                unit={METRICS[key].unit}
+                accent={zone?.color ?? METRICS[key].accent}
+                variant="primary"
+                badge={zone?.badge}
+              />
+            )
+          })}
         </div>
       )}
 
       {small.length > 0 && (
         <div className="tile-row tile-row-small">
-          {small.map((key) => (
-            <Tile
-              key={key}
-              label={t(METRICS[key].labelKey)}
-              value={fmt(key, valueOf(key, latest))}
-              unit={METRICS[key].unit}
-              variant="small"
-            />
-          ))}
+          {small.map((key) => {
+            const zone = hrZone(key, latest, maxHr, t)
+            return (
+              <Tile
+                key={key}
+                label={t(METRICS[key].labelKey)}
+                value={fmt(key, valueOf(key, latest))}
+                unit={METRICS[key].unit}
+                accent={zone?.color}
+                variant="small"
+                badge={zone?.badge}
+              />
+            )
+          })}
         </div>
       )}
     </section>

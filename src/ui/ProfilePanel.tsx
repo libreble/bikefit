@@ -6,7 +6,14 @@
  */
 import { useState, type FormEvent } from 'react'
 import { loadProfile, saveProfile, clearProfile, type UserProfile } from '../profile/profile'
+import { estimateMaxHr } from '../hr/zones'
 import { useT } from '../i18n/i18n'
+
+/** A plausible adult age we're willing to turn into a 220 − age estimate. */
+function ageForEstimate(s: string): number | undefined {
+  const n = numOrUndef(s)
+  return n !== undefined && n >= 1 && n <= 119 ? n : undefined
+}
 
 function numOrUndef(s: string): number | undefined {
   const t = s.trim()
@@ -31,11 +38,29 @@ export function ProfilePanel({ onClose, onChanged }: Props) {
   const [saved, setSaved] = useState<UserProfile | null>(() => loadProfile())
   const [ftp, setFtp] = useState(() => str(saved?.ftpW))
   const [weight, setWeight] = useState(() => str(saved?.weightKg))
-  const [maxHr, setMaxHr] = useState(() => str(saved?.maxHr))
   const [age, setAge] = useState(() => str(saved?.ageYears))
+  // Max HR seeds from a saved value, else a 220 − age estimate. `maxHrTouched` locks it: once the
+  // rider types their own (or a saved value already exists), age no longer overwrites the field.
+  const [maxHr, setMaxHr] = useState(() =>
+    str(saved?.maxHr ?? (saved?.ageYears !== undefined ? estimateMaxHr(saved.ageYears) : undefined)),
+  )
+  const [maxHrTouched, setMaxHrTouched] = useState(() => saved?.maxHr !== undefined)
   const [name, setName] = useState(() => saved?.name ?? '')
   const [colorMode, setColorMode] = useState(() => saved?.colorMode ?? true)
   const [flash, setFlash] = useState<string | undefined>(undefined)
+
+  // While the rider hasn't set their own max HR, keep it tracking the age estimate.
+  const onAgeChange = (v: string) => {
+    setAge(v)
+    if (maxHrTouched) return
+    const a = ageForEstimate(v)
+    setMaxHr(a !== undefined ? String(estimateMaxHr(a)) : '')
+  }
+  const onMaxHrChange = (v: string) => {
+    setMaxHr(v)
+    setMaxHrTouched(true)
+  }
+  const maxHrIsEstimate = !maxHrTouched && maxHr !== ''
 
   const onSave = (e: FormEvent) => {
     e.preventDefault()
@@ -61,6 +86,7 @@ export function ProfilePanel({ onClose, onChanged }: Props) {
     setFtp('')
     setWeight('')
     setMaxHr('')
+    setMaxHrTouched(false)
     setAge('')
     setName('')
     setColorMode(true)
@@ -102,9 +128,10 @@ export function ProfilePanel({ onClose, onChanged }: Props) {
           <input
             inputMode="numeric"
             value={maxHr}
-            onChange={(e) => setMaxHr(e.target.value)}
+            onChange={(e) => onMaxHrChange(e.target.value)}
             placeholder={t('profile.phMaxHr')}
           />
+          {maxHrIsEstimate && <small className="field-hint">{t('profile.maxHrHint')}</small>}
         </label>
         <label className="field-row">
           <span>
@@ -113,7 +140,7 @@ export function ProfilePanel({ onClose, onChanged }: Props) {
           <input
             inputMode="numeric"
             value={age}
-            onChange={(e) => setAge(e.target.value)}
+            onChange={(e) => onAgeChange(e.target.value)}
             placeholder={t('profile.phAge')}
           />
         </label>

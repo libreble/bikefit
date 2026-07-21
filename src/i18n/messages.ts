@@ -138,6 +138,17 @@ const en = {
   'profile.colorMode': 'Enable Coach-By-Color on the bike (front zone light)',
   'profile.deleted': 'Profile deleted.',
   'profile.delete': 'Delete profile',
+  'profile.maxHrHint': 'Estimated from age (220 − age) — enter your own to override.',
+
+  // Heart-rate zones (live HR-tile badge + post-ride time-in-zone breakdown).
+  'hrzone.title': 'Time in HR zones',
+  'hrzone.maxHr': 'HRmax {hr}',
+  'hrzone.badgeAria': 'Heart-rate zone {z}',
+  'hrzone.z1': 'Recovery',
+  'hrzone.z2': 'Endurance',
+  'hrzone.z3': 'Aerobic',
+  'hrzone.z4': 'Threshold',
+  'hrzone.z5': 'Maximum',
 
   // User-facing error messages (thrown deep, shown in the alert strip).
   'error.notJson': 'Not valid JSON.',
@@ -262,6 +273,16 @@ const nl: Record<MessageKey, string> = {
   'profile.colorMode': 'Coach-By-Color op de fiets inschakelen (zonelampje voor)',
   'profile.deleted': 'Profiel verwijderd.',
   'profile.delete': 'Profiel verwijderen',
+  'profile.maxHrHint': 'Geschat op basis van leeftijd (220 − leeftijd) — vul je eigen waarde in.',
+
+  'hrzone.title': 'Tijd in hartslagzones',
+  'hrzone.maxHr': 'HRmax {hr}',
+  'hrzone.badgeAria': 'Hartslagzone {z}',
+  'hrzone.z1': 'Herstel',
+  'hrzone.z2': 'Duur',
+  'hrzone.z3': 'Aeroob',
+  'hrzone.z4': 'Drempel',
+  'hrzone.z5': 'Maximaal',
 
   'error.notJson': 'Geen geldige JSON.',
   'error.notSessionFile': 'Geen Bikefit-sessiebestand.',

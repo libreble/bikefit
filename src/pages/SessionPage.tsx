@@ -8,6 +8,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import * as controller from '../app/controller'
 import type { SessionDetail } from '../app/controller'
 import { SessionSummaryView } from '../ui/SessionSummaryView'
+import { loadProfile } from '../profile/profile'
 import { useT } from '../i18n/i18n'
 
 export function SessionPage() {
@@ -17,6 +18,8 @@ export function SessionPage() {
   const [detail, setDetail] = useState<SessionDetail | null>(null)
   const [error, setError] = useState<string | undefined>(undefined)
   const [busy, setBusy] = useState(false)
+  // Read the rider's max HR once for the time-in-zone breakdown (profile rarely changes mid-view).
+  const [maxHr] = useState<number | undefined>(() => loadProfile()?.maxHr)
 
   useEffect(() => {
     if (id === undefined) return
@@ -100,7 +103,9 @@ export function SessionPage() {
       {detail === null && error === undefined && (
         <div className="sessions-empty">{t('common.loading')}</div>
       )}
-      {detail !== null && <SessionSummaryView session={detail.session} samples={detail.samples} />}
+      {detail !== null && (
+        <SessionSummaryView session={detail.session} samples={detail.samples} maxHr={maxHr} />
+      )}
     </div>
   )
 }

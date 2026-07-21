@@ -4,6 +4,35 @@ Newest first. Each entry: **what**, **why**, and **how to reverse** if we change
 
 ---
 
+## 2026-07-21 — Heart-rate zones (5-band %HRmax) + age-estimated max HR
+
+**What.** Added HR training zones, surfaced two ways: the live HR tile recolours to the current zone
+and shows a `Zx` badge; the post-ride summary (the History detail view) gets a stacked time-in-zone
+bar with per-zone %, minutes, and the HRmax used. New `src/hr/zones.ts` holds the pure model
+(`estimateMaxHr`, `hrZoneIndex`, `hrZoneCounts`, `HR_ZONES`) and `src/ui/HrZoneBar.tsx` the bar. The
+profile form now auto-fills Max HR from age as `220 − age` (a hint says so); typing your own locks
+the field, and an already-saved value is never overwritten.
+
+**Why `220 − age`.** The rider asked for it explicitly — it's the formula on every gym HR chart. The
+estimate is persisted into `profile.maxHr` (not derived at read-time), so everything downstream —
+zones *and* the value sent to the bike — just reads one concrete field. Kept entirely in the profile
+form; no max-HR abstraction threaded elsewhere.
+
+**Why 5-band %HRmax** (`<60 / 60–70 / 70–80 / 80–90 / ≥90`). It's the only zone model our profile
+data supports: %HRR (Karvonen) needs a resting HR we don't collect, %LTHR needs a threshold test.
+Z1 is open-ended below so every sample buckets with no "below zone" edge case. These are HR zones,
+distinct from the bike's Coach-By-Color *power* zones (off FTP).
+
+**Trade-off / caveat.** The post-ride breakdown uses the rider's *current* profile max HR — we don't
+snapshot HRmax per session, so editing it re-buckets old rides. Fine for a personal tool; revisit if
+per-session HRmax ever matters. All zone UI hides when no max HR (or age) is set.
+
+**How to reverse.** Delete `src/hr/` + `HrZoneBar` and the `maxHr` props threaded through
+App→LivePage→LiveTiles and SessionPage→SessionSummaryView; drop the profile form's age→maxHr effect.
+Adding resting HR later would unlock a Karvonen option without changing the call sites.
+
+---
+
 ## 2026-07-21 — Installable PWA: hand-rolled manifest + service worker (no plugin)
 
 **What.** The app is now an installable, offline-capable PWA. Added `public/manifest.webmanifest`

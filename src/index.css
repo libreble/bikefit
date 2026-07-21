@@ -16,6 +16,13 @@
   --bad: #f87171;
   --ok: #31c48d;
 
+  /* HR zones Z1→Z5 (recovery → max): blue → green → yellow → orange → red. */
+  --z1: #4aa3ff;
+  --z2: #31c48d;
+  --z3: #f2c94c;
+  --z4: #f2994a;
+  --z5: #f0616d;
+
   --radius: 14px;
   --radius-sm: 9px;
   --gap: 12px;
@@ -39,6 +46,12 @@
     --warn: #b4770a;
     --bad: #d63b3b;
     --ok: #0f9d63;
+
+    --z1: #1e6fd9;
+    --z2: #0f9d63;
+    --z3: #c88a04;
+    --z4: #d97706;
+    --z5: #dc2626;
   }
 }
 
@@ -391,6 +404,28 @@ h3 {
   font-size: 0.66rem;
 }
 
+/* Label row: metric name on the left, an optional zone badge (HR) pinned right. */
+.tile-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tile-zone {
+  flex: none;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  color: var(--zone-color);
+  background: color-mix(in srgb, var(--zone-color) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--zone-color) 45%, transparent);
+  white-space: nowrap;
+}
+
 /* ---- graphs ---- */
 
 .graphs {
@@ -559,6 +594,14 @@ h3 {
   text-transform: none;
   letter-spacing: 0;
   font-weight: 500;
+}
+
+.field-hint {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  font-size: 0.68rem;
+  color: var(--muted);
 }
 
 .profile-name {
@@ -924,6 +967,99 @@ h3 {
   flex-direction: column;
   gap: 12px;
   margin-top: 8px;
+}
+
+/* ---- HR-zone breakdown (post-ride summary) ---- */
+
+.hrzones {
+  margin: 4px 0 12px;
+}
+
+.hrzones-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.hrzones-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.hrzones-max {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.hrzones-bar {
+  display: flex;
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+}
+
+.hrzones-seg {
+  height: 100%;
+  background: var(--zone-color);
+  min-width: 2px;
+}
+
+.hrzones-legend {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hrzones-item {
+  display: grid;
+  grid-template-columns: 12px 26px 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+
+.hrzones-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--zone-color);
+}
+
+.hrzones-z {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.hrzones-name {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hrzones-pct {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.hrzones-time {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  min-width: 52px;
+  text-align: right;
 }
 
 /* ---- nav + routed pages ---- */

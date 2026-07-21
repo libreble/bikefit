@@ -62,7 +62,7 @@ export function App() {
 
       <main className="app-content">
         <Routes>
-          <Route path="/" element={<LivePage prefs={dash} />} />
+          <Route path="/" element={<LivePage prefs={dash} maxHr={profile?.maxHr} />} />
           <Route path="/sessions" element={<HistoryPage />} />
           <Route path="/sessions/:id" element={<SessionPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

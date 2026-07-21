@@ -6,6 +6,7 @@
 import type { StoredSession } from '../session/db'
 import type { SessionSample } from '../types'
 import { Sparkline } from './Sparkline'
+import { HrZoneBar } from './HrZoneBar'
 import { formatDuration } from '../util/time'
 import { useT } from '../i18n/i18n'
 
@@ -35,9 +36,12 @@ function Stat({ label, value }: { label: string; value: string }) {
 export function SessionSummaryView({
   session,
   samples,
+  maxHr,
 }: {
   session: StoredSession
   samples: SessionSample[]
+  /** Rider's current max HR, for the time-in-zone breakdown; omitted → that section hides. */
+  maxHr?: number
 }) {
   const t = useT()
   const summary = session.summary
@@ -64,6 +68,12 @@ export function SessionSummaryView({
         {iff !== undefined && <Stat label={t('stat.if')} value={iff.toFixed(2)} />}
         {tss !== undefined && <Stat label={t('stat.tss')} value={tss.toFixed(0)} />}
       </div>
+
+      <HrZoneBar
+        bpmSeries={series(samples, (s) => s.bpm)}
+        maxHr={maxHr}
+        durationS={summary?.durationS}
+      />
 
       <div className="review-graphs">
         <Sparkline
