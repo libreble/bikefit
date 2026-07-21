@@ -4,6 +4,42 @@ Newest first. Each entry: **what**, **why**, and **how to reverse** if we change
 
 ---
 
+## 2026-07-21 — Installable PWA: hand-rolled manifest + service worker (no plugin)
+
+**What.** The app is now an installable, offline-capable PWA. Added `public/manifest.webmanifest`
+(name, `standalone` display, theme/background `#0b0f14`, PNG icons at 192/512 + a maskable 512 + an
+SVG), PNG/SVG icons generated from the bike glyph (`public/icon.svg`, `public/maskable.svg`, and
+their rasterizations + `apple-touch-icon.png`), and a small service worker (`public/sw.js`)
+registered in production only from `src/pwa/register.ts`. `index.html` gained the manifest link,
+apple-touch-icon, and iOS meta tags. Verified in-browser: SW registers + activates + controls the
+page, the manifest and all four icons load, and after one reload the JS/CSS chunks are cached so the
+app runs fully offline.
+
+**Why hand-rolled (no `vite-plugin-pwa`/Workbox).** Same ethos as the own-framer / own-sparklines /
+own-i18n choices: the caching need here is tiny, so a ~70-line worker beats a plugin + Workbox
+runtime. The SW does two things — **network-first** for navigations (HTML stays fresh online, falls
+back to the cached shell offline) and **cache-first** for everything else (Vite content-hashes asset
+filenames, so a cached hit is always the exact file). All paths are relative to the worker's own URL,
+so it works unchanged at the `/bikefit/` GitHub Pages subpath — same reasoning as Vite's `base: './'`
+and the manifest's relative `start_url`/`scope`/icon `src`.
+
+**Why no `skipWaiting()`.** A new worker installs and waits, taking over only once every app tab is
+closed and reopened. That deliberately avoids the stale-tab hazard (a live old page requesting an old
+chunk that a mid-session cache purge just deleted) at the cost of updates landing on the next fresh
+open — the right trade for short on-the-bike sessions. `clients.claim()` on activate still lets the
+*first* visit go offline without a manual reload.
+
+**Icons** were rasterized from SVG with ImageMagick (`convert`) at build-authoring time and committed
+as static PNGs — no `sharp`/build-step dependency. The maskable variant pre-scales the glyph into the
+center safe zone so a launcher's circle/squircle mask never clips it.
+
+**How to reverse.** Delete `public/sw.js` + the `registerServiceWorker()` call to drop offline/SW
+(the manifest alone still gives an installable app on most browsers); delete the manifest link to
+stop it being installable. To adopt a plugin later, keep the registration call site and swap the
+worker.
+
+---
+
 ## 2026-07-21 — Demo affordances gated behind `?demo=1`
 
 **What.** The two testing-only controls — the "Demo" fake-ride button (ConnectionBar) and "Add demo

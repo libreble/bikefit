@@ -47,5 +47,6 @@ Live/History nav in the header. See DECISIONS.md (2026-07-21).
   main ones.
 - **Live FTP-based zones / historical FTP recompute** — now unblocked (the stored sample series
   landed with the storage pivot); see DECISIONS.md (2026-07-12) "no live recompute".
-- **Service-worker / true offline PWA** and tightening the device picker to a service filter
-  (needs a real-bike confirmation first).
+- ~~**Service-worker / true offline PWA**~~ — **DONE 2026-07-21.** Hand-rolled manifest + service
+  worker (no plugin): installable, works offline after one visit. See DECISIONS.md (2026-07-21).
+- **Tighten the device picker to a service filter** (needs a real-bike confirmation first).
