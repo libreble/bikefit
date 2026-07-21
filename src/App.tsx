@@ -16,6 +16,7 @@ import { SessionPage } from './pages/SessionPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { loadProfile, type UserProfile } from './profile/profile'
 import { loadDashboard, type DashboardPrefs } from './prefs/dashboard'
+import { cbcEnabled as cbcFlag } from './app/flags'
 import { useT } from './i18n/i18n'
 
 const navClass = ({ isActive }: { isActive: boolean }): string =>
@@ -25,6 +26,11 @@ export function App() {
   const t = useT()
   const [profile, setProfile] = useState<UserProfile | null>(() => loadProfile())
   const [dash, setDash] = useState<DashboardPrefs>(() => loadDashboard())
+
+  // Coach-By-Color is only live on the bike when the rider enabled it *and* set an FTP (no FTP → the
+  // bike never computes zones; PROTOCOL.md §8a). Also behind the `?cbc=1` flag until the bike's zone
+  // indexing is confirmed on real hardware (see src/app/flags.ts).
+  const cbcEnabled = cbcFlag && !!profile && (profile.colorMode ?? true) && (profile.ftpW ?? 0) > 0
 
   return (
     <div className="app">
@@ -51,7 +57,10 @@ export function App() {
 
       <main className="app-content">
         <Routes>
-          <Route path="/" element={<LivePage prefs={dash} maxHr={profile?.maxHr} />} />
+          <Route
+            path="/"
+            element={<LivePage prefs={dash} maxHr={profile?.maxHr} cbcEnabled={cbcEnabled} />}
+          />
           <Route path="/sessions" element={<HistoryPage />} />
           <Route path="/sessions/:id" element={<SessionPage />} />
           <Route

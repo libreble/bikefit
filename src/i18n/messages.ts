@@ -149,6 +149,14 @@ const en = {
   'hrzone.z4': 'Threshold',
   'hrzone.z5': 'Maximum',
 
+  // Coach-By-Color power zones — the bike's front-light colours, mirrored on the power tile.
+  'cbczone.badgeAria': 'Coach-By-Color zone: {name}',
+  'cbczone.white': 'White',
+  'cbczone.blue': 'Blue',
+  'cbczone.green': 'Green',
+  'cbczone.yellow': 'Yellow',
+  'cbczone.red': 'Red',
+
   // User-facing error messages (thrown deep, shown in the alert strip).
   'error.notJson': 'Not valid JSON.',
   'error.notSessionFile': 'Not a Bikefit session file.',
@@ -281,6 +289,13 @@ const nl: Record<MessageKey, string> = {
   'hrzone.z3': 'Aeroob',
   'hrzone.z4': 'Drempel',
   'hrzone.z5': 'Maximaal',
+
+  'cbczone.badgeAria': 'Coach-By-Color-zone: {name}',
+  'cbczone.white': 'Wit',
+  'cbczone.blue': 'Blauw',
+  'cbczone.green': 'Groen',
+  'cbczone.yellow': 'Geel',
+  'cbczone.red': 'Rood',
 
   'error.notJson': 'Geen geldige JSON.',
   'error.notSessionFile': 'Geen Bikefit-sessiebestand.',

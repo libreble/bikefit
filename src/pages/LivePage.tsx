@@ -11,7 +11,15 @@ import { useSessions } from '../ui/useSessions'
 import type { DashboardPrefs } from '../prefs/dashboard'
 import { useT } from '../i18n/i18n'
 
-export function LivePage({ prefs, maxHr }: { prefs: DashboardPrefs; maxHr?: number }) {
+export function LivePage({
+  prefs,
+  maxHr,
+  cbcEnabled,
+}: {
+  prefs: DashboardPrefs
+  maxHr?: number
+  cbcEnabled?: boolean
+}) {
   const t = useT()
   const { sessions } = useSessions()
   const recent = sessions.slice(0, 3)
@@ -19,7 +27,7 @@ export function LivePage({ prefs, maxHr }: { prefs: DashboardPrefs; maxHr?: numb
   return (
     <div className="app-main">
       <div className="col-main">
-        <LiveTiles prefs={prefs} maxHr={maxHr} />
+        <LiveTiles prefs={prefs} maxHr={maxHr} cbcEnabled={cbcEnabled} />
         <Graphs />
       </div>
 

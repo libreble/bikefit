@@ -10,16 +10,20 @@ import type { LiveAverages } from '../store/useSessionStore'
 import type { NormalizedSample } from '../types'
 import { METRICS, visibleMetrics, type DashboardPrefs, type MetricKey } from '../prefs/dashboard'
 import { HR_ZONES, hrZoneIndex } from '../hr/zones'
+import { CBC_ZONES, cbcZoneIndex } from '../cbc/zones'
 import { formatDuration } from '../util/time'
 import { useT, type TFunc } from '../i18n/i18n'
 
 type Variant = 'hero' | 'primary' | 'small'
 
-/** A coloured "Z3" chip pinned to a tile's label row (HR only, when a zone is known). */
+/** A small coloured chip on a tile's value row: HR shows a "Z3" pill; power shows a Coach-By-Color
+ * swatch + colour name (`swatch: true`). */
 interface ZoneBadge {
   text: string
   color: string
   ariaLabel: string
+  /** Render a leading colour-swatch dot and keep neutral text (CBC chips); HR "Zx" chips omit it. */
+  swatch?: boolean
 }
 
 interface TileProps {
@@ -48,10 +52,11 @@ function Tile({ label, value, unit, accent, variant, sub, badge }: TileProps) {
             {unit !== undefined && <span className="tile-unit">{unit}</span>}
             {badge !== undefined && (
               <span
-                className="tile-zone"
+                className={badge.swatch ? 'tile-zone tile-zone--swatch' : 'tile-zone'}
                 style={{ '--zone-color': badge.color } as CSSProperties}
                 aria-label={badge.ariaLabel}
               >
+                {badge.swatch && <span className="tile-zone-swatch" aria-hidden="true" />}
                 {badge.text}
               </span>
             )}
@@ -63,22 +68,41 @@ function Tile({ label, value, unit, accent, variant, sub, badge }: TileProps) {
   )
 }
 
-/** For the HR tile only: the current zone's colour (to tint the tile) and its "Zx" badge. `null`
- * for every other metric, or when HR/HRmax is unknown so nothing zone-related should show. */
-function hrZone(
+/** The number-tint accent + chip for a tile's zone, or `null` when the tile carries no zone (or its
+ * data is unknown). Two systems share the mechanism: HR (%HRmax, any HR tile) shows a "Zx" pill;
+ * power shows the bike's live Coach-By-Color zone as a colour swatch, gated on `cbcEnabled`. */
+function zoneFor(
   key: MetricKey,
   latest: NormalizedSample,
   maxHr: number | undefined,
+  cbcEnabled: boolean,
   t: TFunc,
-): { color: string; badge: ZoneBadge } | null {
-  if (key !== 'hr') return null
-  const zi = hrZoneIndex(latest.bpm, maxHr)
-  if (zi === null) return null
-  const z = HR_ZONES[zi]!
-  return {
-    color: z.colorVar,
-    badge: { text: `Z${z.z}`, color: z.colorVar, ariaLabel: t('hrzone.badgeAria', { z: z.z }) },
+): { accent: string; badge: ZoneBadge } | null {
+  if (key === 'hr') {
+    const zi = hrZoneIndex(latest.bpm, maxHr)
+    if (zi === null) return null
+    const z = HR_ZONES[zi]!
+    return {
+      accent: z.colorVar,
+      badge: { text: `Z${z.z}`, color: z.colorVar, ariaLabel: t('hrzone.badgeAria', { z: z.z }) },
+    }
   }
+  if (key === 'power' && cbcEnabled) {
+    const zi = cbcZoneIndex(latest.extra?.trainingZone)
+    if (zi === null) return null
+    const z = CBC_ZONES[zi]!
+    const name = t(z.labelKey)
+    return {
+      accent: z.accentVar,
+      badge: {
+        text: name,
+        color: z.colorVar,
+        ariaLabel: t('cbczone.badgeAria', { name }),
+        swatch: true,
+      },
+    }
+  }
+  return null
 }
 
 /** Above/below-average arrow with a small deadband so it doesn't flicker around the mean. */
@@ -140,7 +164,16 @@ function fmt(key: MetricKey, v: number | undefined): string {
   return v.toFixed(METRICS[key].digits)
 }
 
-export function LiveTiles({ prefs, maxHr }: { prefs: DashboardPrefs; maxHr?: number }) {
+export function LiveTiles({
+  prefs,
+  maxHr,
+  cbcEnabled = false,
+}: {
+  prefs: DashboardPrefs
+  maxHr?: number
+  /** Coach-By-Color is on for this rider (profile flag + FTP set) — tint the power tile by zone. */
+  cbcEnabled?: boolean
+}) {
   const t = useT()
   const latest = useSessionStore((s) => s.latest)
   const avg = useSessionStore((s) => s.avg)
@@ -154,7 +187,7 @@ export function LiveTiles({ prefs, maxHr }: { prefs: DashboardPrefs; maxHr?: num
   const heroMeta = METRICS[heroKey]
   const heroValue = valueOf(heroKey, latest)
   const heroAvg = avgOf(heroKey, avg)
-  const heroZone = hrZone(heroKey, latest, maxHr, t)
+  const heroZone = zoneFor(heroKey, latest, maxHr, cbcEnabled, t)
   const heroSub =
     heroAvg !== undefined ? (
       <>
@@ -172,7 +205,7 @@ export function LiveTiles({ prefs, maxHr }: { prefs: DashboardPrefs; maxHr?: num
         label={t(heroMeta.labelKey)}
         value={fmt(heroKey, heroValue)}
         unit={heroMeta.unit}
-        accent={heroZone?.color ?? heroMeta.accent ?? 'var(--accent)'}
+        accent={heroZone?.accent ?? heroMeta.accent ?? 'var(--accent)'}
         variant="hero"
         sub={heroSub}
         badge={heroZone?.badge}
@@ -181,14 +214,14 @@ export function LiveTiles({ prefs, maxHr }: { prefs: DashboardPrefs; maxHr?: num
       {primary.length > 0 && (
         <div className="tile-row tile-row-primary">
           {primary.map((key) => {
-            const zone = hrZone(key, latest, maxHr, t)
+            const zone = zoneFor(key, latest, maxHr, cbcEnabled, t)
             return (
               <Tile
                 key={key}
                 label={t(METRICS[key].labelKey)}
                 value={fmt(key, valueOf(key, latest))}
                 unit={METRICS[key].unit}
-                accent={zone?.color ?? METRICS[key].accent}
+                accent={zone?.accent ?? METRICS[key].accent}
                 variant="primary"
                 badge={zone?.badge}
               />
@@ -200,14 +233,14 @@ export function LiveTiles({ prefs, maxHr }: { prefs: DashboardPrefs; maxHr?: num
       {small.length > 0 && (
         <div className="tile-row tile-row-small">
           {small.map((key) => {
-            const zone = hrZone(key, latest, maxHr, t)
+            const zone = zoneFor(key, latest, maxHr, cbcEnabled, t)
             return (
               <Tile
                 key={key}
                 label={t(METRICS[key].labelKey)}
                 value={fmt(key, valueOf(key, latest))}
                 unit={METRICS[key].unit}
-                accent={zone?.color}
+                accent={zone?.accent}
                 variant="small"
                 badge={zone?.badge}
               />

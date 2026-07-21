@@ -23,6 +23,14 @@
   --z4: #f2994a;
   --z5: #f0616d;
 
+  /* Coach-By-Color power zones — mirror the bike's front light (White · Blue · Green · Yellow · Red).
+     Distinct from the HR zones above: has White, no orange. These are dark-theme (bright) values. */
+  --cbc-white: #eef2f8;
+  --cbc-blue: #4aa3ff;
+  --cbc-green: #31c48d;
+  --cbc-yellow: #f2c94c;
+  --cbc-red: #f0616d;
+
   --radius: 14px;
   --radius-sm: 9px;
   --gap: 12px;
@@ -52,6 +60,13 @@
     --z3: #c88a04;
     --z4: #d97706;
     --z5: #dc2626;
+
+    /* Coach-By-Color, light theme. White reads as a near-panel dot against its border ring. */
+    --cbc-white: #f4f7fa;
+    --cbc-blue: #1e6fd9;
+    --cbc-green: #0f9d63;
+    --cbc-yellow: #c88a04;
+    --cbc-red: #dc2626;
   }
 }
 
@@ -430,6 +445,28 @@ h3 {
   background: color-mix(in srgb, var(--zone-color) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--zone-color) 45%, transparent);
   white-space: nowrap;
+}
+
+/* Coach-By-Color chip: a colour swatch + the colour *name* (e.g. "● Green"). Unlike the HR "Zx"
+   chip it keeps neutral text — the zone colour lives in the swatch, so White and Yellow stay
+   legible where zone-coloured text would wash out. */
+.tile-zone--swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--zone-color) 12%, var(--panel));
+  border: 1px solid var(--border);
+}
+
+.tile-zone-swatch {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--zone-color);
+  /* Ring so a white/pale swatch stays visible against the chip. */
+  border: 1px solid color-mix(in srgb, var(--zone-color) 55%, var(--border));
 }
 
 /* Phone: pin the metric grid to column counts that divide the default set (3 primary + 4 small)
