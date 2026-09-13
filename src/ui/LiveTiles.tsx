@@ -1,0 +1,253 @@
+/**
+ * Arm's-length-legible live readouts from `latest`, laid out by the rider's dashboard prefs: the
+ * first visible metric is the hero tile (with its session average + an above/below-average trend
+ * arrow), the next few fill the primary row, the rest the small row. Undefined metrics render as
+ * "—" (never a fake 0 — important for HR, which must not read 0 when absent).
+ */
+import type { CSSProperties, ReactNode } from 'react'
+import { useSessionStore } from '../store/useSessionStore'
+import type { LiveAverages } from '../store/useSessionStore'
+import type { NormalizedSample } from '../types'
+import { METRICS, visibleMetrics, type DashboardPrefs, type MetricKey } from '../prefs/dashboard'
+import { HR_ZONES, hrZoneIndex } from '../hr/zones'
+import { CBC_ZONES, cbcZoneIndex } from '../cbc/zones'
+import { formatDuration } from '../util/time'
+import { useT, type TFunc } from '../i18n/i18n'
+
+type Variant = 'hero' | 'primary' | 'small'
+
+/** A small coloured chip on a tile's value row: HR shows a "Z3" pill; power shows a Coach-By-Color
+ * swatch + colour name (`swatch: true`). */
+interface ZoneBadge {
+  text: string
+  color: string
+  ariaLabel: string
+  /** Render a leading colour-swatch dot and keep neutral text (CBC chips); HR "Zx" chips omit it. */
+  swatch?: boolean
+}
+
+interface TileProps {
+  label: string
+  value: string
+  unit?: string
+  accent?: string
+  variant: Variant
+  sub?: ReactNode
+  badge?: ZoneBadge
+}
+
+function Tile({ label, value, unit, accent, variant, sub, badge }: TileProps) {
+  return (
+    <div
+      className={`tile tile-${variant}`}
+      style={accent !== undefined ? ({ '--tile-accent': accent } as CSSProperties) : undefined}
+    >
+      <div className="tile-head">
+        <span className="tile-label">{label}</span>
+      </div>
+      <div className="tile-value">
+        <span className="tile-number">{value}</span>
+        {(unit !== undefined || badge !== undefined) && (
+          <span className="tile-meta">
+            {unit !== undefined && <span className="tile-unit">{unit}</span>}
+            {badge !== undefined && (
+              <span
+                className={badge.swatch ? 'tile-zone tile-zone--swatch' : 'tile-zone'}
+                style={{ '--zone-color': badge.color } as CSSProperties}
+                aria-label={badge.ariaLabel}
+              >
+                {badge.swatch && <span className="tile-zone-swatch" aria-hidden="true" />}
+                {badge.text}
+              </span>
+            )}
+          </span>
+        )}
+      </div>
+      {sub !== undefined && <div className="tile-sub">{sub}</div>}
+    </div>
+  )
+}
+
+/** The number-tint accent + chip for a tile's zone, or `null` when the tile carries no zone (or its
+ * data is unknown). Two systems share the mechanism: HR (%HRmax, any HR tile) shows a "Zx" pill;
+ * power shows the bike's live Coach-By-Color zone as a colour swatch, gated on `cbcEnabled`. */
+function zoneFor(
+  key: MetricKey,
+  latest: NormalizedSample,
+  maxHr: number | undefined,
+  cbcEnabled: boolean,
+  t: TFunc,
+): { accent: string; badge: ZoneBadge } | null {
+  if (key === 'hr') {
+    const zi = hrZoneIndex(latest.bpm, maxHr)
+    if (zi === null) return null
+    const z = HR_ZONES[zi]!
+    return {
+      accent: z.colorVar,
+      badge: { text: `Z${z.z}`, color: z.colorVar, ariaLabel: t('hrzone.badgeAria', { z: z.z }) },
+    }
+  }
+  if (key === 'power' && cbcEnabled) {
+    const zi = cbcZoneIndex(latest.extra?.trainingZone)
+    if (zi === null) return null
+    const z = CBC_ZONES[zi]!
+    const name = t(z.labelKey)
+    return {
+      accent: z.accentVar,
+      badge: {
+        text: name,
+        color: z.colorVar,
+        ariaLabel: t('cbczone.badgeAria', { name }),
+        swatch: true,
+      },
+    }
+  }
+  return null
+}
+
+/** Above/below-average arrow with a small deadband so it doesn't flicker around the mean. */
+function Trend({ value, avg, t }: { value?: number; avg?: number; t: TFunc }) {
+  if (value === undefined || avg === undefined) return null
+  const band = Math.max(5, avg * 0.03)
+  const dir = value > avg + band ? 'up' : value < avg - band ? 'down' : 'flat'
+  const char = dir === 'up' ? '▲' : dir === 'down' ? '▼' : '▪'
+  const label =
+    dir === 'up' ? t('tiles.aboveAvg') : dir === 'down' ? t('tiles.belowAvg') : t('tiles.atAvg')
+  return (
+    <span className={`trend trend--${dir}`} aria-label={label}>
+      {char}
+    </span>
+  )
+}
+
+/** Live value for a metric out of the merged `latest` sample. */
+function valueOf(key: MetricKey, l: NormalizedSample): number | undefined {
+  switch (key) {
+    case 'power':
+      return l.powerW
+    case 'cadence':
+      return l.cadenceRpm
+    case 'hr':
+      return l.bpm
+    case 'speed':
+      return l.speedKmh
+    case 'resistance':
+      return l.resistance
+    case 'distance':
+      return l.distanceKm
+    case 'calories':
+      return l.energyKcal
+    case 'elapsed':
+      return l.elapsedS
+  }
+}
+
+/** Session average for a metric, when we track one (the instantaneous metrics only). */
+function avgOf(key: MetricKey, a: LiveAverages): number | undefined {
+  switch (key) {
+    case 'power':
+      return a.powerW
+    case 'cadence':
+      return a.cadenceRpm
+    case 'hr':
+      return a.bpm
+    case 'speed':
+      return a.speedKmh
+    default:
+      return undefined
+  }
+}
+
+function fmt(key: MetricKey, v: number | undefined): string {
+  if (v === undefined) return '—'
+  if (METRICS[key].isTime) return formatDuration(v)
+  return v.toFixed(METRICS[key].digits)
+}
+
+export function LiveTiles({
+  prefs,
+  maxHr,
+  cbcEnabled = false,
+}: {
+  prefs: DashboardPrefs
+  maxHr?: number
+  /** Coach-By-Color is on for this rider (profile flag + FTP set) — tint the power tile by zone. */
+  cbcEnabled?: boolean
+}) {
+  const t = useT()
+  const latest = useSessionStore((s) => s.latest)
+  const avg = useSessionStore((s) => s.avg)
+
+  const order = visibleMetrics(prefs)
+  if (order.length === 0) return null
+  const heroKey = order[0] as MetricKey
+  const primary = order.slice(1, 4)
+  const small = order.slice(4)
+
+  const heroMeta = METRICS[heroKey]
+  const heroValue = valueOf(heroKey, latest)
+  const heroAvg = avgOf(heroKey, avg)
+  const heroZone = zoneFor(heroKey, latest, maxHr, cbcEnabled, t)
+  const heroSub =
+    heroAvg !== undefined ? (
+      <>
+        <span className="tile-avg">
+          {t('tiles.avg')} {fmt(heroKey, heroAvg)}
+          {heroMeta.unit !== undefined && ` ${heroMeta.unit}`}
+        </span>
+        <Trend value={heroValue} avg={heroAvg} t={t} />
+      </>
+    ) : undefined
+
+  return (
+    <section className="tiles" aria-label={t('tiles.label')}>
+      <Tile
+        label={t(heroMeta.labelKey)}
+        value={fmt(heroKey, heroValue)}
+        unit={heroMeta.unit}
+        accent={heroZone?.accent ?? heroMeta.accent ?? 'var(--accent)'}
+        variant="hero"
+        sub={heroSub}
+        badge={heroZone?.badge}
+      />
+
+      {primary.length > 0 && (
+        <div className="tile-row tile-row-primary">
+          {primary.map((key) => {
+            const zone = zoneFor(key, latest, maxHr, cbcEnabled, t)
+            return (
+              <Tile
+                key={key}
+                label={t(METRICS[key].labelKey)}
+                value={fmt(key, valueOf(key, latest))}
+                unit={METRICS[key].unit}
+                accent={zone?.accent ?? METRICS[key].accent}
+                variant="primary"
+                badge={zone?.badge}
+              />
+            )
+          })}
+        </div>
+      )}
+
+      {small.length > 0 && (
+        <div className="tile-row tile-row-small">
+          {small.map((key) => {
+            const zone = zoneFor(key, latest, maxHr, cbcEnabled, t)
+            return (
+              <Tile
+                key={key}
+                label={t(METRICS[key].labelKey)}
+                value={fmt(key, valueOf(key, latest))}
+                unit={METRICS[key].unit}
+                accent={zone?.accent}
+                variant="small"
+                badge={zone?.badge}
+              />
+            )
+          })}
+        </div>
+      )}
+    </section>
+  )
+}

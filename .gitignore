@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+*.log
+scratchpad/
+dist/
+# Exported session files (ride data, not source)
+bikefit-*.json
