@@ -3,7 +3,7 @@
 **Open the app: <https://libreble.github.io/bikefit/>** — installable, works offline. Needs Chrome on
 Android or Chrome/Edge on desktop (Web Bluetooth). No account, no cloud.
 
-Part of [libreble](https://libreble.github.io) — your devices, without their vendors.
+Part of [libreble](https://libreble.github.io) — your devices, set free.
 
 Offline, account-less BLE fitness logger + live workout dashboard. **Target device: ICG IC-6.**
 Local-first: no accounts, no cloud, no network calls at runtime — everything lives in the
