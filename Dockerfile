@@ -4,9 +4,9 @@
 #   docker build -t bikefit .                                # served at /
 #   docker build --build-arg BASE_PATH=/bikefit/ -t bikefit .   # served at /bikefit/
 
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
-RUN corepack enable
+RUN npm install -g corepack && corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .

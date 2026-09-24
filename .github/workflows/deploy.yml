@@ -24,7 +24,7 @@ jobs:
       - uses: pnpm/action-setup@v6 # reads packageManager from package.json
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build # tsc -b && vite build -> dist/ (base './' works at the /bikefit/ subpath)
