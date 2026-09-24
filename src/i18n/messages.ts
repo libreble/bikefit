@@ -36,6 +36,11 @@ const en = {
   'footer.partOf': 'Part of',
   'footer.github': 'GitHub',
   'footer.report': 'Report an issue',
+  'footer.kofi': 'Support libreble on Ko-fi',
+  'footer.kofi.0': 'Buy me an energy gel',
+  'footer.kofi.1': 'Buy me a spare inner tube',
+  'footer.kofi.2': 'Buy me a clean towel',
+  'footer.kofi.3': 'Buy me a bidon',
 
   // Connection bar.
   'conn.connect': 'Connect',
@@ -194,6 +199,11 @@ const nl: Record<MessageKey, string> = {
   'footer.partOf': 'Onderdeel van',
   'footer.github': 'GitHub',
   'footer.report': 'Meld een probleem',
+  'footer.kofi': 'Steun libreble via Ko-fi',
+  'footer.kofi.0': 'Doneer een energiegel',
+  'footer.kofi.1': 'Doneer een reservebinnenband',
+  'footer.kofi.2': 'Doneer een fietsbel',
+  'footer.kofi.3': 'Doneer een bidon',
 
   'conn.connect': 'Verbinden',
   'conn.disconnect': 'Verbreken',
