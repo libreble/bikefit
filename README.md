@@ -36,6 +36,50 @@ pnpm preview        # serves dist/ on localhost
   `python3 -m http.server`) so it's `localhost`, **or** whitelist a laptop's LAN URL in
   `chrome://flags#unsafely-treat-insecure-origin-as-secure`.
 
+## Self-host
+
+The hosted app above is the easiest way. If you'd rather run your own copy, it's a static site —
+nothing to configure, no backend, no database.
+
+**Docker** — a prebuilt image (linux/amd64 + arm64) is published to the GitHub Container Registry:
+
+```bash
+docker run -d --name bikefit -p 8080:8080 --restart unless-stopped ghcr.io/libreble/bikefit
+# → http://localhost:8080/
+```
+
+```yaml
+# compose.yaml
+services:
+  bikefit:
+    image: ghcr.io/libreble/bikefit:latest
+    ports: ["8080:8080"]
+    restart: unless-stopped
+```
+
+The image serves the app at `/`. To serve it under a subpath behind your own proxy, build it
+yourself: `docker build --build-arg BASE_PATH=/bikefit/ -t bikefit .`
+
+**Build and host it yourself** — any static web server works:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build          # → dist/
+# upload dist/ to nginx, Caddy, Netlify, Cloudflare Pages, a bucket, …
+```
+
+The build uses relative paths, so `dist/` works from any path as is. Serve `index.html` and
+`sw.js` with `Cache-Control: no-cache` so updates reach installed copies.
+[`docker/nginx.conf.template`](docker/nginx.conf.template) is a working nginx example.
+
+> **HTTPS is required.** Web Bluetooth only works in a secure context. `http://localhost` counts,
+> so the app works on the machine running it — but `http://192.168.x.x:8080` from your phone
+> will load and then refuse to connect. For phones, put it behind TLS: a reverse proxy with a
+> real certificate (Caddy does this automatically for a domain), or `tailscale serve`.
+
+Self-hosted copies keep their `<link rel="canonical">` pointing at libreble.github.io, so
+search engines don't treat them as duplicates.
+
 ## What it does (v1)
 
 - **Connect + auto-detect** the protocol (ICG wired; FTMS/CPS are the next adapters).
