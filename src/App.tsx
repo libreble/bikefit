@@ -1,15 +1,16 @@
 /**
  * App shell: a header (title + a Live/History/Settings nav and the global connection bar) over a
- * routed content area. Routes: / live dashboard, /sessions history, /sessions/:id a bookmarkable
- * session, /settings the language/profile/dashboard config (once header buttons + modals, now a
- * tab — keeps the top bar clean on a phone). The BLE session and store live in module singletons,
- * so navigating between routes never interrupts a live ride.
+ * routed content area, with the libreble footer below it. Routes: / live dashboard, /sessions
+ * history, /sessions/:id a bookmarkable session, /settings the language/profile/dashboard config
+ * (once header buttons + modals, now a tab — keeps the top bar clean on a phone). The BLE session
+ * and store live in module singletons, so navigating between routes never interrupts a live ride.
  */
 import './index.css'
 import { useState } from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { ConnectionBar } from './ui/ConnectionBar'
 import { LanguageSwitcher } from './ui/LanguageSwitcher'
+import { AppFooter } from './ui/AppFooter'
 import { LivePage } from './pages/LivePage'
 import { HistoryPage } from './pages/HistoryPage'
 import { SessionPage } from './pages/SessionPage'
@@ -73,6 +74,8 @@ export function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+
+      <AppFooter />
     </div>
   )
 }

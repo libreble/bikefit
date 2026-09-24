@@ -32,6 +32,11 @@ const en = {
   'nav.settings': 'Settings',
   'lang.label': 'Language',
 
+  // Footer ("libreble" and the version stay untranslated).
+  'footer.partOf': 'Part of',
+  'footer.github': 'GitHub',
+  'footer.report': 'Report an issue',
+
   // Connection bar.
   'conn.connect': 'Connect',
   'conn.disconnect': 'Disconnect',
@@ -185,6 +190,10 @@ const nl: Record<MessageKey, string> = {
   'nav.history': 'Geschiedenis',
   'nav.settings': 'Instellingen',
   'lang.label': 'Taal',
+
+  'footer.partOf': 'Onderdeel van',
+  'footer.github': 'GitHub',
+  'footer.report': 'Meld een probleem',
 
   'conn.connect': 'Verbinden',
   'conn.disconnect': 'Verbreken',
