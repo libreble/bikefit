@@ -37,6 +37,10 @@
 
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* libreble brand accent (footer): the "ble" in the wordmark and the beacon's LED. */
+  --libreble-ble: #ffa259;
+  --libreble-led: #ff8a3d;
 }
 
 @media (prefers-color-scheme: light) {
@@ -67,6 +71,9 @@
     --cbc-green: #0f9d63;
     --cbc-yellow: #c88a04;
     --cbc-red: #dc2626;
+
+    --libreble-ble: #c2410c;
+    --libreble-led: #f26b1d;
   }
 }
 
@@ -1105,6 +1112,57 @@ h3 {
 
 .app-content {
   min-width: 0;
+}
+
+/* ---- libreble footer: one small centred line that wraps on a phone ---- */
+
+.app-footer {
+  padding-top: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.app-footer__links {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 12px;
+}
+
+.app-footer__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-footer__link:hover {
+  color: var(--text);
+}
+
+.app-footer__icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.app-footer__led {
+  fill: var(--libreble-led);
+}
+
+.app-footer__brand {
+  font-weight: 500;
+}
+
+.app-footer__ble {
+  color: var(--libreble-ble);
+}
+
+.app-footer__version {
+  font-family: var(--mono);
 }
 
 .app-nav {
